@@ -15,8 +15,8 @@ class LocalType(Base):
         self.e_type = e_type
 
     def __repr__(self):
-        return '{id_ida} : {type}'.format(
-            id_ida=self.id_ida, start=self.e_type)
+        return '{id_ida} : {e_type}'.format(
+            id_ida=self.id_ida, e_type=self.e_type)
 
 
 class Function(Base):
