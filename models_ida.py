@@ -41,6 +41,18 @@ class IdaRawLocalType(Base):
         return '"{name}" : {one_line}'.format(
             name=self.name, one_line=self.one_line)
 
+    def get_id(self):
+        return self.id_ida
+
+    def get_type(self):
+        """
+        sample: struct _mon_block_fld {...}
+        record = 'struct'
+        :return: record
+        """
+        # return self.multi_line;
+        pass
+
 
 class IdaRawFunctions(Base):
     __tablename__ = 'ida_raw_functions'
@@ -66,3 +78,45 @@ class IdaRawFunctions(Base):
     def __repr__(self):
         return '"{name}" : {start}'.format(
             name=self.short_name, start=self.start)
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        """
+        sample: _mon_block_fld::init(...)
+        record = 'init'
+        :return: record
+        """
+        # return self.short_name;
+        pass
+
+    def get_args_type(self):
+        """
+        record = {
+             'base': '_mon_block_fld'
+             'full': '_mon_block_fld*'
+            }
+        :return: records = []
+        """
+        # return self.ida_type;
+        pass
+
+    def get_args_name(self):
+        """
+        record = '_this'
+        :return: records = []
+        """
+        # return self.ida_fields;
+        pass
+
+    def get_return_type(self):
+        """
+        record = {
+             'base': '_mon_block_fld'
+             'full': '_mon_block_fld*'
+            }
+        :return: record
+        """
+        # return self.ida_type;
+        pass
