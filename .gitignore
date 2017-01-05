@@ -1,2 +1,4 @@
 *.pyc
 *.idea
+*.sqlite3
+code_gen
