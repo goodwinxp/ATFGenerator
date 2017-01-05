@@ -5,6 +5,7 @@ import models_parser
 from config import CONFIG
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from paginate_sqlalchemy import SqlalchemyOrmPage
 
 
 class IdaInfoParser(object):
@@ -24,6 +25,8 @@ class IdaInfoParser(object):
         self.__create_tables()
         self.__create_session()
         self.__parsing()
+        self.__fetch_depend()
+        self.__linking()
 
     def __drop_tables(self):
         models_parser.Base.metadata.drop_all(self.engine_db)
@@ -47,4 +50,69 @@ class IdaInfoParser(object):
         self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['verbose'])
 
     def __parsing(self):
+        self.__parsing_functions()
+        self.__parsing_local_types()
+
+    def __parsing_functions(self):
+        query = self.session.query(models_ida.IdaRawFunctions)
+        count = query.count()
+        if CONFIG['verbose']:
+            print 'count functions: {count}'.format(count=count)
+
+        for i in range(0, count % CONFIG['page_size']):
+            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
+            functions = []
+            for item in page.items:
+                function = models_parser.Function(
+                    id_ida=item.get_id(),
+                    name=item.get_name(),
+                    args_type=item.get_args_type(),
+                    args_name=item.get_args_name(),
+                    return_type=item.get_return_type(),
+                )
+                functions.append(function)
+
+            self.session.add_all(functions)
+
+    def __parsing_local_types(self):
+        query = self.session.query(models_ida.IdaRawLocalType)
+        count = query.count()
+        if CONFIG['verbose']:
+            print 'count local types: {count}'.format(count=count)
+
+        for i in range(0, count % CONFIG['page_size']):
+            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
+            local_types = []
+            for item in page.items:
+                local_type = models_parser.LocalType(
+                    id_ida=item.get_id(),
+                    e_type=item.get_type(),
+                )
+                local_types.append(local_type)
+
+            self.session.add_all(local_types)
+
+    def __fetch_depend(self):
+        self.__fetch_depend_functions()
+        self.__fetch_depend_local_types()
+
+    def __fetch_depend_functions(self):
+        pass
+
+    def __fetch_depend_local_types(self):
+        pass
+
+    def __linking(self):
+        self.__linking_functions()
+        self.__linking_local_types()
+        self.__linking_local_types()
+
+    def __linking_functions(self):
+        pass
+
+    def __linking_local_types(self):
+        self.__linking_namespace()
+        pass
+
+    def __linking_namespace(self):
         pass
