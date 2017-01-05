@@ -53,22 +53,21 @@ class Namespace(Base):
             name=self.name)
 
 
-'''
-This table show relation A(id_local_type) <-> B(id_namespace)
-Sample:
-namespace US
-{
-    struct _mon_block_fld
-    {
-        ...
-    }
-}
-
-relation _mon_block_fld <-> US
-'''
-
-
 class LinkNamespace(Base):
+    """
+    This table show relation A(id_local_type) <-> B(id_namespace)
+    Sample:
+    namespace US
+    {
+        struct _mon_block_fld
+        {
+            ...
+        }
+    }
+
+    relation _mon_block_fld <-> US
+    """
+
     __tablename__ = 'link_namespace'
     id = Column('id', INTEGER, primary_key=True)
     id_local_type = Column('id_local_type', INTEGER, ForeignKey('local_types.id'))
@@ -83,19 +82,17 @@ class LinkNamespace(Base):
             id_local_type=self.id_local_type, id_namespace=self.id_namespace)
 
 
-'''
-This table show relation A(id_local_type) <-> B(id_function)
-Sample:
-struct _mon_block_fld
-{
-    void set_position(...);
-}
-
-relation _mon_block_fld <-> set_position
-'''
-
-
 class LinkFunctions(Base):
+    """
+    This table show relation A(id_local_type) <-> B(id_function)
+    Sample:
+    struct _mon_block_fld
+    {
+        void set_position(...);
+    }
+
+    relation _mon_block_fld <-> set_position
+    """
     __tablename__ = 'link_function'
     id = Column('id', INTEGER, primary_key=True)
     id_local_type = Column('id_local_type', INTEGER, ForeignKey('local_types.id'))
@@ -110,22 +107,20 @@ class LinkFunctions(Base):
             id_local_type=self.id_local_type, id_function=self.id_function)
 
 
-'''
-This table show relation A(id_child) <-> B(id_parent)
-Sample:
-struct _mon_block_fld
-{
-    struct _dummy_position {
-    ...
-    };
-
-    _dummy_position pos;
-}
-relation _dummy_position <-> _mon_block_fld
-'''
-
-
 class LinkLocalType(Base):
+    """
+    This table show relation A(id_child) <-> B(id_parent)
+    Sample:
+    struct _mon_block_fld
+    {
+        struct _dummy_position {
+        ...
+        };
+
+        _dummy_position pos;
+    }
+    relation _dummy_position <-> _mon_block_fld
+    """
     __tablename__ = 'link_local_type'
     id = Column('id', INTEGER, primary_key=True)
     id_parent = Column('id_parent', INTEGER, ForeignKey('local_types.id'))
@@ -140,23 +135,21 @@ class LinkLocalType(Base):
             id_child=self.id_child, id_parent=self.id_parent)
 
 
-'''
-This table show dependenceies A(id_local_type) from B(id_depend)
-Sample:
-struct _dummy_position {
-    ...
-};
-
-struct _mon_block_fld
-{
-    _dummy_position pos;
-}
-
-_mon_block_fld dependence from _mon_block_fld
-'''
-
-
 class DependLocalType(Base):
+    """
+    This table show dependenceies A(id_local_type) from B(id_depend)
+    Sample:
+    struct _dummy_position {
+        ...
+    };
+
+    struct _mon_block_fld
+    {
+        _dummy_position pos;
+    }
+
+    _mon_block_fld dependence from _mon_block_fld
+    """
     __tablename__ = 'dep_local_type'
     id = Column('id', INTEGER, primary_key=True)
     id_local_type = Column('id_local_type', INTEGER, ForeignKey('local_types.id'))
@@ -171,21 +164,19 @@ class DependLocalType(Base):
             id_depend=self.id_depend, id_local_type=self.id_local_type)
 
 
-'''
-This table show dependenceies A(id_function) <-> B(id_local_type)
-Sample:
-struct _mon_block_fld
-{
-    ...
-}
-
-void check_position(_mon_block_fld* a);
-
-check_position dependence from _mon_block_fld
-'''
-
-
 class DependFunction(Base):
+    """
+    This table show dependenceies A(id_function) <-> B(id_local_type)
+    Sample:
+    struct _mon_block_fld
+    {
+        ...
+    }
+
+    void check_position(_mon_block_fld* a);
+
+    check_position dependence from _mon_block_fld
+    """
     __tablename__ = 'dep_function'
     id = Column('id', INTEGER, primary_key=True)
     id_function = Column('id_function', INTEGER, ForeignKey('functions.id'))
