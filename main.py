@@ -1,6 +1,7 @@
 from ida_code_gen import IdaCodeGen
 from ida_parser import IdaInfoParser
 
+
 # TODO : path to database from arguments
 # TODO : path to output directory for code generation
 
