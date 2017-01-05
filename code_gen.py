@@ -1,23 +1,24 @@
-import sys, getopt
+import sys
+import getopt
+
+from config import CONFIG
 from ida_code_gen import IdaCodeGen
 from ida_parser import IdaInfoParser
 
 
 def print_help():
     print 'Options:'
-    print ' -d, --database   path to database from arguments'
-    print ' -o, --out_dir    path to output directory for code generation'
+    print ' -d, --database   Path to database from arguments. Default = ' + CONFIG['database']
+    print ' -o, --out_dir    Path to output directory for code generation. Default = ' + CONFIG['out_dir']
+    print ' -v, --verbose    Verbose mode programm. Default = ' + str(CONFIG['verbose'])
     print 'Example:'
-    print ' python code_gen.py --database C:/ida_info.sqlite3 --out_dir C:/code_gen/'
+    print ' python code_gen.py -v --database C:/ida_info.sqlite3 --out_dir C:/code_gen/'
     pass
 
 
 def main(argv):
-    db_file = './ida_info.sqlite3'
-    out_dir = './code_gen/'
-
     try:
-        opts, args = getopt.getopt(argv, 'hd:o:', ['database=', 'out_dir='])
+        opts, args = getopt.getopt(argv, 'hvdo', ['verbose', 'database=', 'out_dir='])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
@@ -27,18 +28,27 @@ def main(argv):
             print_help()
             sys.exit()
 
+        if opt in ('-v', '--verbose'):
+            CONFIG['verbose'] = True
+            continue
+
         if opt in ('-d', '--database'):
-            db_file = arg
+            CONFIG['database'] = arg
             continue
 
         if opt in ('-o', '--out_dir'):
-            out_dir = arg
+            CONFIG['out_dir'] = arg
             continue
 
-    parser = IdaInfoParser(db_file)
+    if CONFIG['verbose']:
+        print 'database: ' + CONFIG['database']
+        print 'out_dir: ' + CONFIG['out_dir']
+        print 'verbose: ' + str(CONFIG['verbose'])
+
+    parser = IdaInfoParser(CONFIG['database'])
     parser.start()
 
-    code_gen = IdaCodeGen(db_file, out_dir)
+    code_gen = IdaCodeGen(CONFIG['database'], CONFIG['out_dir'])
     code_gen.start()
 
 

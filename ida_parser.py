@@ -2,6 +2,7 @@ import os
 import models_ida
 import models_parser
 
+from config import CONFIG
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -43,7 +44,7 @@ class IdaInfoParser(object):
         if not os.path.exists(self.db_file):
             open(self.db_file, 'a').close()
 
-        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=True)
+        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['verbose'])
 
     def __parsing(self):
         pass
