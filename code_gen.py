@@ -18,13 +18,13 @@ def print_help():
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, 'hvdo', ['verbose', 'database=', 'out_dir='])
+        opts, args = getopt.getopt(argv, 'hvdo', ['help', ''verbose', 'database=', 'out_dir='])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt == '-h':
+        if opt == ('-h', '--help'):
             print_help()
             sys.exit()
 
