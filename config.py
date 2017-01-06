@@ -3,5 +3,5 @@ CONFIG = {
     'out_dir': './code_gen/',
     'verbose': False,
     'sql_verbose': False,
-    'page_size': 100
+    'page_size': 1000
 }
