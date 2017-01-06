@@ -14,7 +14,6 @@ def print_help():
     print ' --vverbose       Turn on sql echo. Default = ' + str(CONFIG['sql_verbose'])
     print 'Example:'
     print ' python code_gen.py -v --database C:/ida_info.sqlite3 --out_dir C:/code_gen/'
-    pass
 
 
 def main(argv):
