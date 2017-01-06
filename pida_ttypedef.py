@@ -4,7 +4,7 @@ from pida_tlocal_type import IdaTLocalType
 
 
 class IdaTTypedef(IdaTypes):
-    def __init__(self, ida_type):
+    def __init__(self, ida_type=IDA_TYPES['typedef']):
         self.name = None
         self.ida_type = ida_type
 
