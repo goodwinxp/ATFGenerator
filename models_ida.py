@@ -1,5 +1,3 @@
-import json
-import pida_fields
 from sqlalchemy import Column, INTEGER, TEXT, BLOB
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -47,24 +45,7 @@ class IdaRawLocalType(Base):
         return self.id_ida
 
     def get_type(self):
-        """
-        sample: struct _mon_block_fld {...}
-        record = 'struct'
-        :return: record
-        """
-        value = u'unknown'
-        types = [u'struct', u'union', u'enum', u'typedef', u'class']
-        offset = 0
-        if self.multi_line.startswith(u'const '):
-            offset = len(u'const ')
-
-        for t in types:
-            if self.multi_line.startswith(t, offset):
-                value = t
-                break
-
-        assert not value == u'unknown', self.multi_line
-        return value
+        return self.multi_line
 
 
 class IdaRawFunctions(Base):
@@ -96,44 +77,10 @@ class IdaRawFunctions(Base):
         return self.id
 
     def get_name(self):
-        """
-        sample: _mon_block_fld::init(...)
-        record = 'init'
-        :return: record
-        """
-        # TODO
-        # return self.short_name;
-        pass
+        return self.short_name
 
-    def get_args_type(self):
-        """
-        record = {
-             'base': '_mon_block_fld'
-             'full': '_mon_block_fld*'
-            }
-        :return: json(records : [])
-        """
-        # TODO
-        # return self.ida_type;
-        pass
+    def get_type(self):
+        return self.ida_type
 
     def get_args_name(self):
-        """
-        record = '_this'
-        :return: json(records : [])
-        """
-        fields = list(pida_fields.decode_name_fields(self.ida_fields))
-        return json.dumps(fields, separators=(',', ':'))
-
-    def get_return_type(self):
-        """
-        record = {
-             'base': '_mon_block_fld'
-             'full': '_mon_block_fld*'
-            }
-        :return: record
-        """
-        # TODO
-        # return self.ida_type;
-        pass
-
+        return self.ida_fields

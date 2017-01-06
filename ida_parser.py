@@ -70,22 +70,22 @@ class IdaInfoParser(object):
             print 'count functions: {count}'.format(count=count)
             print 'count page: {count_page}'.format(count_page=count_page)
 
-        for i in range(0, count_page + 1):
+        for i in range(1, count_page + 1):
             page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
             functions = []
             for item in page.items:
                 function = models_parser.Function(
                     id_ida=item.get_id(),
-                    name=item.get_name(),
-                    args_type=item.get_args_type(),
-                    args_name=item.get_args_name(),
-                    return_type=item.get_return_type(),
+                    raw_name=item.get_name(),
+                    ida_type=item.get_type(),
+                    ida_fields=item.get_args_name(),
                 )
                 functions.append(function)
             if CONFIG['verbose']:
                 print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
                                                                                 count_item=len(page.items))
             self.session.add_all(functions)
+        self.session.commit()
 
     def __parsing_local_types(self):
         query = self.session.query(models_ida.IdaRawLocalType)
@@ -95,13 +95,13 @@ class IdaInfoParser(object):
             print 'count local types: {count}'.format(count=count)
             print 'count page: {count_page}'.format(count_page=count_page)
 
-        for i in range(0, count_page + 1):
+        for i in range(1, count_page + 1):
             page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
             local_types = []
             for item in page.items:
                 local_type = models_parser.LocalType(
                     id_ida=item.get_id(),
-                    e_type=item.get_type(),
+                    raw_multi=item.get_type(),
                 )
                 local_types.append(local_type)
 
@@ -109,6 +109,7 @@ class IdaInfoParser(object):
                 print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
                                                                                 count_item=len(page.items))
             self.session.add_all(local_types)
+        self.session.commit()
 
     def __fetch_depend_functions(self):
         pass
