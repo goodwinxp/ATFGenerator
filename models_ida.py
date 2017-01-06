@@ -101,6 +101,7 @@ class IdaRawFunctions(Base):
         record = 'init'
         :return: record
         """
+        # TODO
         # return self.short_name;
         pass
 
@@ -112,6 +113,7 @@ class IdaRawFunctions(Base):
             }
         :return: json(records : [])
         """
+        # TODO
         # return self.ida_type;
         pass
 
@@ -131,6 +133,7 @@ class IdaRawFunctions(Base):
             }
         :return: record
         """
+        # TODO
         # return self.ida_type;
         pass
 
