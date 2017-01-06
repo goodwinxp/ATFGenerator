@@ -1,3 +1,4 @@
+from config import CONFIG
 from sqlalchemy import Column, INTEGER, TEXT, BLOB
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -77,10 +78,41 @@ class IdaRawFunctions(Base):
         return self.id
 
     def get_name(self):
-        return self.short_name
+        self.__check_names()
+
+        if self.short_name:
+            return self.short_name
+
+        if self.long_name:
+            return self.long_name
+
+        if self.mangled_name.find('?') == -1:
+            return self.mangled_name
+
+        return ''
 
     def get_type(self):
         return self.ida_type
 
     def get_args_name(self):
         return self.ida_fields
+
+    def __truncate_names(self):
+        self.short_name = ''
+        self.long_name = ''
+        if CONFIG['verbose']:
+            print 'Warning: truncate short name. id function = {id}'.format(id=self.id)
+            print 'Warning: truncate long name. id function = {id}'.format(id=self.id)
+
+    def __check_names(self):
+        if self.short_name is not None:
+            if len(self.short_name) >= 1023:
+                self.__truncate_names()
+                if CONFIG['verbose']:
+                    print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
+
+        if self.long_name is not None:
+            if len(self.long_name) >= 1023:
+                self.__truncate_names()
+                if CONFIG['verbose']:
+                    print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
