@@ -29,6 +29,18 @@ class IdaInfoParser(object):
         self.__fetch_depend()
         self.__linking()
 
+    def __parsing(self):
+        self.__parsing_functions()
+        self.__parsing_local_types()
+
+    def __fetch_depend(self):
+        self.__fetch_depend_functions()
+        self.__fetch_depend_local_types()
+
+    def __linking(self):
+        self.__linking_functions()
+        self.__linking_local_types()
+
     def __drop_tables(self):
         models_parser.Base.metadata.drop_all(self.engine_db)
 
@@ -49,10 +61,6 @@ class IdaInfoParser(object):
             open(self.db_file, 'a').close()
 
         self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['sql_verbose'])
-
-    def __parsing(self):
-        self.__parsing_functions()
-        self.__parsing_local_types()
 
     def __parsing_functions(self):
         query = self.session.query(models_ida.IdaRawFunctions)
@@ -102,20 +110,11 @@ class IdaInfoParser(object):
                                                                                 count_item=len(page.items))
             self.session.add_all(local_types)
 
-    def __fetch_depend(self):
-        self.__fetch_depend_functions()
-        self.__fetch_depend_local_types()
-
     def __fetch_depend_functions(self):
         pass
 
     def __fetch_depend_local_types(self):
         pass
-
-    def __linking(self):
-        self.__linking_functions()
-        self.__linking_local_types()
-        self.__linking_local_types()
 
     def __linking_functions(self):
         pass
