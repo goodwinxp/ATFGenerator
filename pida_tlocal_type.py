@@ -16,10 +16,11 @@ class IdaTLocalType(IdaTypes):
 
         return 2
 
-    def get_name(self):
-        if self.name is None:
-            self.__load_name()
+    def set_name(self, name):
+        self.name = name
 
+    def get_name(self):
+        assert self.name is not None, 'Need set name'
         return self.name
 
     def get_type(self):
@@ -30,11 +31,7 @@ class IdaTLocalType(IdaTypes):
 
     def __set_normal_id(self, normal_id):
         self.normal_id = normal_id
-        self.__load_name()
 
     def __extension_id(self):
         self.normal_id |= 1 << 13
 
-    def __load_name(self):
-        # TODO: load info from database
-        self.name = 'unknown'
