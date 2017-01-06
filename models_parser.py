@@ -55,6 +55,7 @@ class Function(Base):
         self.raw_name = raw_name
         self.ida_type = ida_type
         self.ida_fields = ida_fields
+        self.__parsing()
 
     def __repr__(self):
         return '{name} : {id_ida}'.format(
