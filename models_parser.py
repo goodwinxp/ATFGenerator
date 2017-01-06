@@ -70,6 +70,7 @@ class Function(Base):
     def __parsing_name(self):
         self.name = self.raw_name
         if not self.name:
+            self.name = ''
             return
 
         arg_pair = util_parser.get_last_pair_sym(self.name, '\(', '\)')
