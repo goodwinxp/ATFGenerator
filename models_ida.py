@@ -52,8 +52,19 @@ class IdaRawLocalType(Base):
         record = 'struct'
         :return: record
         """
-        # return self.multi_line;
-        pass
+        value = u'unknown'
+        types = [u'struct', u'union', u'enum', u'typedef', u'class']
+        offset = 0
+        if self.multi_line.startswith(u'const '):
+            offset = len(u'const ')
+
+        for t in types:
+            if self.multi_line.startswith(t, offset):
+                value = t
+                break
+
+        assert not value == u'unknown', self.multi_line
+        return value
 
 
 class IdaRawFunctions(Base):
