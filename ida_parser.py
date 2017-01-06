@@ -1,4 +1,5 @@
 import os
+import math
 import models_ida
 import models_parser
 
@@ -47,7 +48,7 @@ class IdaInfoParser(object):
         if not os.path.exists(self.db_file):
             open(self.db_file, 'a').close()
 
-        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['verbose'])
+        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['sql_verbose'])
 
     def __parsing(self):
         self.__parsing_functions()
@@ -56,10 +57,12 @@ class IdaInfoParser(object):
     def __parsing_functions(self):
         query = self.session.query(models_ida.IdaRawFunctions)
         count = query.count()
+        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
             print 'count functions: {count}'.format(count=count)
+            print 'count page: {count_page}'.format(count_page=count_page)
 
-        for i in range(0, count % CONFIG['page_size']):
+        for i in range(0, count_page + 1):
             page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
             functions = []
             for item in page.items:
@@ -71,16 +74,20 @@ class IdaInfoParser(object):
                     return_type=item.get_return_type(),
                 )
                 functions.append(function)
-
+            if CONFIG['verbose']:
+                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
+                                                                                count_item=len(page.items))
             self.session.add_all(functions)
 
     def __parsing_local_types(self):
         query = self.session.query(models_ida.IdaRawLocalType)
         count = query.count()
+        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
             print 'count local types: {count}'.format(count=count)
+            print 'count page: {count_page}'.format(count_page=count_page)
 
-        for i in range(0, count % CONFIG['page_size']):
+        for i in range(0, count_page + 1):
             page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
             local_types = []
             for item in page.items:
@@ -90,6 +97,9 @@ class IdaInfoParser(object):
                 )
                 local_types.append(local_type)
 
+            if CONFIG['verbose']:
+                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
+                                                                                count_item=len(page.items))
             self.session.add_all(local_types)
 
     def __fetch_depend(self):
