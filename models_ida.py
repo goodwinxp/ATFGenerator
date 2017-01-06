@@ -1,3 +1,5 @@
+import json
+import pida_fields
 from sqlalchemy import Column, INTEGER, TEXT, BLOB
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -97,7 +99,7 @@ class IdaRawFunctions(Base):
              'base': '_mon_block_fld'
              'full': '_mon_block_fld*'
             }
-        :return: records = []
+        :return: json(records : [])
         """
         # return self.ida_type;
         pass
@@ -105,10 +107,10 @@ class IdaRawFunctions(Base):
     def get_args_name(self):
         """
         record = '_this'
-        :return: records = []
+        :return: json(records : [])
         """
-        # return self.ida_fields;
-        pass
+        fields = list(pida_fields.decode_name_fields(self.ida_fields))
+        return json.dumps(fields, separators=(',', ':'))
 
     def get_return_type(self):
         """
@@ -120,3 +122,4 @@ class IdaRawFunctions(Base):
         """
         # return self.ida_type;
         pass
+
