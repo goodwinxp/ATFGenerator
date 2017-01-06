@@ -2,7 +2,7 @@ from pida_abc_type import IdaTypes
 from pida_types import get_base_name
 
 
-class IdaBase(IdaTypes):
+class IdaTBase(IdaTypes):
     def __init__(self, ida_type):
         self.name = None
         self.ida_type = ida_type
