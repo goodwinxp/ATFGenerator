@@ -36,7 +36,7 @@ class IdaCodeGen(object):
         if not os.path.exists(self.db_file):
             open(self.db_file, 'a').close()
 
-        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['verbose'])
+        self.engine_db = create_engine('sqlite:///' + self.db_file, echo=CONFIG['sql_verbose'])
 
     def __code_gen(self):
         pass
