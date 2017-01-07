@@ -81,8 +81,8 @@ class IdaInfoParser(object):
                     ida_fields=item.get_args_name(),
                 )
                 function.parsing()
-
                 functions.append(function)
+
             if CONFIG['verbose']:
                 print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
                                                                                 count_item=len(page.items))
