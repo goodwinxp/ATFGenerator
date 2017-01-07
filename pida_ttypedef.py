@@ -8,10 +8,10 @@ class IdaTTypedef(IdaTypes):
         self.ida_type = {'idt': ida_type, 'value': None}
 
     def decode(self, data):
-        len_str, value = decode_hybrid_type(data)
+        rbyte, value = decode_hybrid_type(data)
         self.ida_type['value'] = value
 
-        return len_str
+        return rbyte
 
     def get_type(self):
         return self.ida_type
