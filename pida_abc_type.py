@@ -9,9 +9,5 @@ class IdaTypes:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_name(self):
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_type(self):
         raise NotImplementedError()
