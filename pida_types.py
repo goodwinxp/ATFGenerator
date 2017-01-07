@@ -24,7 +24,10 @@ IDA_TYPES = {
     'char': 50,
     'typedef': 61,
     'args': 114,
-    'local_type': 0xff01  # Not ida type
+
+    # Not ida type
+    'local_type': 0xff01,
+    'str': 0xff02
 }
 
 IDA_TYPES_RW = {
@@ -53,7 +56,10 @@ IDA_TYPES_RW = {
     IDA_TYPES['char']: 'char',
     IDA_TYPES['typedef']: 'typedef',
     IDA_TYPES['args']: 'args',
-    IDA_TYPES['local_type']: 'local_type'  # Not ida type
+
+    # Not ida type
+    IDA_TYPES['local_type']: 'local_type',
+    IDA_TYPES['str']: 'str'
 }
 
 
