@@ -2,6 +2,7 @@ import json
 import pida_fields
 import util_parser
 
+from pida_tfunction import IdaTFunctions
 from sqlalchemy import Column, ForeignKey, INTEGER, TEXT
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -49,6 +50,7 @@ class Function(Base):
     return_type = Column('return_type', TEXT)
     args_type = Column('args_type', TEXT)
     args_name = Column('args_name', TEXT)
+    conv_call = Column('conv_call', TEXT)
 
     def __init__(self, id_ida, raw_name, ida_type, ida_fields):
         self.id_ida = id_ida
@@ -62,10 +64,12 @@ class Function(Base):
 
     def parsing(self):
         self.__parsing_name()
-        self.__parsing_ret_type()
-        self.__parsing_args_type()
         self.__parsing_args_name()
+        self.__decode_ida_type()
         self.__args_normalize()
+        self.args_type = json.dumps(self.args_type)
+        self.args_name = json.dumps(self.args_name)
+        self.return_type = json.dumps(self.return_type)
 
     def __parsing_name(self):
         self.name = self.raw_name
@@ -86,32 +90,25 @@ class Function(Base):
         if pos != -1:
             self.name = self.name[pos + 2:]
 
-    def __parsing_args_type(self):
-        args_type = []
-        # TODO: decode ida_type
-        self.args_type = json.dumps(args_type, separators=(',', ':'))
+    def __decode_ida_type(self):
+        self.tfunction = IdaTFunctions()
+        self.tfunction.decode(ida_type=self.ida_type[1:])
+        self.args_type = self.tfunction.get_args()
+        self.return_type = self.tfunction.get_ret_type()
+        self.conv_call = self.tfunction.get_conv_call()
 
     def __parsing_args_name(self):
         fields = list(pida_fields.decode_name_fields(self.ida_fields))
         self.args_name = json.dumps(fields, separators=(',', ':'))
 
-    def __parsing_ret_type(self):
-        ret_type = None
-        # TODO: decode ida_type
-        self.return_type = json.dumps(ret_type, separators=(',', ':'))
-        pass
-
     def __args_normalize(self):
-        args_name = json.loads(self.args_name)
-        args_type = json.loads(self.args_type)
-
-        len_names = len(args_name)
-        len_types = len(args_type)
+        len_names = len(self.args_name)
+        len_types = len(self.args_type)
         if len_types <= len_names:
             return
 
         for i in range(0, len_types - len_names):
-            args_name.append('arg_{cur}'.format(cur=i))
+            self.args_name.append('arg_{cur}'.format(cur=i))
 
 
 class Namespace(Base):
