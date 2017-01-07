@@ -1,10 +1,11 @@
 import json
-import pida_fields
-import util_parser
 
-from pida_tfunction import IdaTFunctions
+import pida_types.fields
 from sqlalchemy import Column, ForeignKey, INTEGER, TEXT
 from sqlalchemy.ext.declarative import declarative_base
+
+import util_parser
+from pida_types.tfunction import IdaTFunctions
 
 Base = declarative_base()
 
@@ -98,7 +99,7 @@ class Function(Base):
         self.conv_call = self.tfunction.get_conv_call()
 
     def __parsing_args_name(self):
-        fields = list(pida_fields.decode_name_fields(self.ida_fields))
+        fields = list(pida_types.fields.decode_name_fields(self.ida_fields))
         self.args_name = json.dumps(fields, separators=(',', ':'))
 
     def __args_normalize(self):

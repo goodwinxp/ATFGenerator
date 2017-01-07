@@ -1,10 +1,10 @@
-from pida_abc_type import IdaTypes
-from pida_types import IDA_TYPES
-from pida_type_decoder import decode_hybrid_type
+from abc_type import IdaTypes
+from types import IDA_TYPES
+from ida_decoder import decode_hybrid_type
 
 
-class IdaTStruct(IdaTypes):
-    def __init__(self, ida_type=IDA_TYPES['struct']):
+class IdaTEnum(IdaTypes):
+    def __init__(self, ida_type=IDA_TYPES['enum']):
         self.ida_type = {'idt': ida_type, 'value': []}
 
     def decode(self, data):

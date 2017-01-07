@@ -1,5 +1,5 @@
-from pida_types import IDA_TYPES
-from pida_tlocal_type import IdaTLocalType
+from types import IDA_TYPES
+from tlocal_type import IdaTLocalType
 
 
 def decode_step(ida_type):
@@ -26,3 +26,13 @@ def decode_hybrid_type(ida_type):
     value = local_type.get_type()
 
     return rbyte, value
+
+
+def decode_id(ida_id):
+    normal_id = 0
+    for c in ida_id:
+        normal_id *= 0x40
+        normal_id += (ord(c) & 0x7f)
+
+    normal_id -= 0x40
+    return normal_id

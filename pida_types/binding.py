@@ -1,11 +1,11 @@
-from pida_tfunction import IdaTFunctions
-from pida_ttypedef import IdaTTypedef
-from pida_tpointer import IdaTPointer
-from pida_tstruct import IdaTStruct
-from pida_tarray import IdaTArray
-from pida_tenum import IdaTEnum
-from pida_tbase import IdaTBase
-from pida_types import IDA_TYPES
+from tfunction import IdaTFunctions
+from ttypedef import IdaTTypedef
+from tpointer import IdaTPointer
+from tstruct import IdaTStruct
+from tarray import IdaTArray
+from tenum import IdaTEnum
+from tbase import IdaTBase
+from types import IDA_TYPES
 
 PIDA_TYPES = {
     IDA_TYPES['void']: IdaTBase,

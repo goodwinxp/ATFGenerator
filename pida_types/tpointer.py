@@ -1,6 +1,6 @@
-from pida_abc_type import IdaTypes
-from pida_types import IDA_TYPES
-from pida_type_decoder import decode_step
+from abc_type import IdaTypes
+from types import IDA_TYPES
+from ida_decoder import decode_step
 
 
 class IdaTPointer(IdaTypes):

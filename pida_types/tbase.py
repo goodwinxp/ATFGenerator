@@ -1,4 +1,4 @@
-from pida_abc_type import IdaTypes
+from abc_type import IdaTypes
 
 
 class IdaTBase(IdaTypes):

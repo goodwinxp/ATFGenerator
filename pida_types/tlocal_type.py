@@ -1,6 +1,7 @@
-from pida_abc_type import IdaTypes
-from pida_types import IDA_TYPES
-from pida_id import decode_ida_id
+import ida_decoder
+from abc_type import IdaTypes
+from types import IDA_TYPES
+
 
 
 class IdaTLocalType(IdaTypes):
@@ -9,7 +10,7 @@ class IdaTLocalType(IdaTypes):
         self.ida_type = {'idt': ida_type, 'value': self.normal_id}
 
     def decode(self, data, ext=False):
-        self.__set_normal_id(decode_ida_id(data[:2]))
+        self.__set_normal_id(ida_decoder(data[:2]))
         if ext:
             self.__extension_id()
 
