@@ -1,5 +1,6 @@
 from pida_tfunction import IdaTFunctions
 from pida_ttypedef import IdaTTypedef
+from pida_tpointer import IdaTPointer
 from pida_tstruct import IdaTStruct
 from pida_tarray import IdaTArray
 from pida_tenum import IdaTEnum
@@ -16,7 +17,7 @@ PIDA_TYPES = {
     IDA_TYPES['int']: IdaTBase,
     IDA_TYPES['bool']: IdaTBase,
     IDA_TYPES['float']: IdaTBase,
-    IDA_TYPES['pointer']: None,
+    IDA_TYPES['pointer']: IdaTPointer,
     IDA_TYPES['function']: IdaTFunctions,
     IDA_TYPES['struct']: IdaTStruct,
     IDA_TYPES['double']: IdaTBase,
