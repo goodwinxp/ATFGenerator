@@ -1,6 +1,5 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
-from ida_decoder import decode_step
 
 
 class IdaTFunctions(IdaTypes):
@@ -16,21 +15,29 @@ class IdaTFunctions(IdaTypes):
         }
 
     def decode(self, ida_type):
-        convention = get_convention_by_code(ord(ida_type[0]))
+        from ida_decoder import decode_step
+
+        raw_conv_type = ord(ida_type[0])
+        convention = get_convention_by_code(raw_conv_type)
         self.ida_type['value']['conv_call'] = convention
 
         offset = 1
-        # no return convention type
-        if ord(ida_type[0]) == 175:
+        # no return
+        if raw_conv_type == 0xAF:
             offset += 2
 
-        rbyte, ret_type = decode_step(ida_type[offset:])
-        offset += rbyte
-        self.ida_type['value']['ret_type'] = ret_type
+        if not raw_conv_type == 0x21:
+            rbyte, ret_type = decode_step(ida_type[offset:])
+            offset += rbyte
+            self.ida_type['value']['ret_type'] = ret_type
+
+            # no args
+            if raw_conv_type == 0x20:
+                return offset
 
         count_args = ord(ida_type[offset])
         offset += 1
-        for i in range(0, count_args):
+        for i in range(1, count_args):
             rbyte, value = decode_step(ida_type[offset:])
             offset += rbyte
             self.ida_type['value']['args_type'].append(value)
@@ -51,10 +58,10 @@ class IdaTFunctions(IdaTypes):
 
 
 CONVENTION_CALL_NM = {
-    '__cdecl': [48, 175],
-    '__stdcall': [49, 81],
-    '__pascal': [64],
-    '__fastcall': [112]
+    '__cdecl': [0x20, 0x21, 0x30, 0xAF],
+    '__stdcall': [0x31, 0x51],
+    '__pascal': [0x40],
+    '__fastcall': [0x70]
 }
 
 

@@ -1,6 +1,5 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
-from ida_decoder import decode_step
 
 
 class IdaTPointer(IdaTypes):
@@ -8,6 +7,8 @@ class IdaTPointer(IdaTypes):
         self.ida_type = {'idt': ida_type, 'value': None}
 
     def decode(self, data):
+        from ida_decoder import decode_step
+
         rbyte, value = decode_step(ida_type=data)
         self.ida_type['value'] = value
         return rbyte

@@ -1,6 +1,5 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
-from ida_decoder import decode_hybrid_type
 
 
 class IdaTStruct(IdaTypes):
@@ -11,6 +10,8 @@ class IdaTStruct(IdaTypes):
         count = ord(data[0])
         offset = 1
         for i in range(0, count):
+            from ida_decoder import decode_hybrid_type
+
             rbyte, value = decode_hybrid_type(ida_type=data[offset:])
             offset += rbyte
             self.ida_type['value'].append(value)

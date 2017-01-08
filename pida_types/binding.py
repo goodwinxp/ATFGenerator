@@ -1,3 +1,4 @@
+from tlocal_type import IdaTLocalType
 from tfunction import IdaTFunctions
 from ttypedef import IdaTTypedef
 from tpointer import IdaTPointer
@@ -32,5 +33,6 @@ PIDA_TYPES = {
     IDA_TYPES['enum']: IdaTEnum,
     IDA_TYPES['char']: IdaTBase,
     IDA_TYPES['typedef']: IdaTTypedef,
-    IDA_TYPES['args']: IdaTBase
+    IDA_TYPES['args']: IdaTBase,
+    IDA_TYPES['local_type']: IdaTLocalType
 }

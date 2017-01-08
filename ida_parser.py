@@ -80,8 +80,11 @@ class IdaInfoParser(object):
                     ida_type=item.get_type(),
                     ida_fields=item.get_args_name(),
                 )
-                function.parsing()
-                functions.append(function)
+                try:
+                    function.parsing()
+                    functions.append(function)
+                except:
+                    print 'function with id = {id}. exception'.format(id=item.get_id())
 
             if CONFIG['verbose']:
                 print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,

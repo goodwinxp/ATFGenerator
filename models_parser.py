@@ -68,9 +68,10 @@ class Function(Base):
         self.__parsing_args_name()
         self.__decode_ida_type()
         self.__args_normalize()
-        self.args_type = json.dumps(self.args_type)
-        self.args_name = json.dumps(self.args_name)
-        self.return_type = json.dumps(self.return_type)
+        self.args_type = json.dumps(self.args_type, separators=(',', ':'))
+        self.args_name = json.dumps(self.args_name, separators=(',', ':'))
+        self.return_type = json.dumps(self.return_type, separators=(',', ':'))
+        self.conv_call = json.dumps(self.conv_call, separators=(',', ':'))
 
     def __parsing_name(self):
         self.name = self.raw_name
@@ -100,7 +101,7 @@ class Function(Base):
 
     def __parsing_args_name(self):
         fields = list(pida_types.fields.decode_name_fields(self.ida_fields))
-        self.args_name = json.dumps(fields, separators=(',', ':'))
+        self.args_name = fields
 
     def __args_normalize(self):
         len_names = len(self.args_name)
