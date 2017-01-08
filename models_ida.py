@@ -100,19 +100,16 @@ class IdaRawFunctions(Base):
     def __truncate_names(self):
         self.short_name = ''
         self.long_name = ''
-        if CONFIG['verbose']:
-            print 'Warning: truncate short name. id function = {id}'.format(id=self.id)
-            print 'Warning: truncate long name. id function = {id}'.format(id=self.id)
+        print 'Warning: truncate short name. id function = {id}'.format(id=self.id)
+        print 'Warning: truncate long name. id function = {id}'.format(id=self.id)
 
     def __check_names(self):
         if self.short_name is not None:
             if len(self.short_name) >= 1023:
                 self.__truncate_names()
-                if CONFIG['verbose']:
-                    print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
+                print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
 
         if self.long_name is not None:
             if len(self.long_name) >= 1023:
                 self.__truncate_names()
-                if CONFIG['verbose']:
-                    print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
+                print 'Warning: name function is so long. id function = {id}'.format(id=self.id)
