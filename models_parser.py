@@ -79,18 +79,19 @@ class Function(Base):
             self.name = ''
             return
 
-        arg_pair = util_parser.get_last_pair_sym(self.name, '\(', '\)')
-        if arg_pair is not None:
-            self.name = self.name[:arg_pair[0]]
+        for i in range(0, 2):
+            arg_pair = util_parser.get_last_pair_sym(self.name, '\(', '\)')
+            if arg_pair is not None:
+                self.name = self.name[:arg_pair[0]]
 
-        templ_pair = util_parser.get_last_pair_sym(self.name, '<', '>')
-        if templ_pair is not None:
-            if len(self.name) - 1 == templ_pair[1]:
-                self.name = self.name[:templ_pair[0]]
+            templ_pair = util_parser.get_last_pair_sym(self.name, '<', '>')
+            if templ_pair is not None:
+                if len(self.name) - 1 == templ_pair[1]:
+                    self.name = self.name[:templ_pair[0]]
 
-        pos = self.name.rfind('::')
-        if pos != -1:
-            self.name = self.name[pos + 2:]
+            pos = self.name.rfind('::')
+            if pos != -1:
+                self.name = self.name[pos + 2:]
 
     def __decode_ida_type(self):
         self.tfunction = IdaTFunctions()
