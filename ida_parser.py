@@ -7,6 +7,7 @@ from config import CONFIG
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from paginate_sqlalchemy import SqlalchemyOrmPage
+from pida_types.types import IDA_TYPES
 
 
 class IdaInfoParser(object):
@@ -117,8 +118,59 @@ class IdaInfoParser(object):
             self.session.add_all(local_types)
         self.session.commit()
 
+    def __fetch_local_type(self, all_types):
+        local_types = []
+        for t in all_types:
+            a_type = t
+            while True:
+                value = a_type['value']
+                if a_type['idt'] == IDA_TYPES['local_type']:
+                    local_types.append(a_type)
+                    break
+
+                elif a_type['idt'] == IDA_TYPES['function']:
+                    local_types.extend(self.__fetch_local_type(value['args_type']))
+                    value = value['ret_type']
+
+                elif a_type['idt'] == IDA_TYPES['array']:
+                    value = value['type']
+
+                if type(value) is not type({}):
+                    break
+
+                a_type = value
+
+        return local_types
+
     def __fetch_depend_functions(self):
-        pass
+        query = self.session.query(models_parser.Function)
+        count = query.count()
+        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
+        if CONFIG['verbose']:
+            print 'count functions: {count}'.format(count=count)
+            print 'count page: {count_page}'.format(count_page=count_page)
+
+        for i in range(1, count_page + 1):
+            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
+            function_deps = []
+            for item in page.items:
+                all_types = item.get_args_type()
+                all_types.append(item.get_return_type())
+
+                dep_types = self.__fetch_local_type(all_types)
+
+                for dep_type in dep_types:
+                    depend = models_parser.DependFunction(
+                        id_function=item.get_id(),
+                        id_local_type=dep_type['value']
+                    )
+                    function_deps.append(depend)
+
+            if CONFIG['verbose']:
+                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
+                                                                                count_item=len(page.items))
+            self.session.add_all(function_deps)
+        self.session.commit()
 
     def __fetch_depend_local_types(self):
         pass
