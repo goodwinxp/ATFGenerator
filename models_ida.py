@@ -48,6 +48,9 @@ class IdaRawLocalType(Base):
     def get_type(self):
         return self.multi_line
 
+    def get_one_line(self):
+        return self.one_line
+
 
 class IdaRawFunctions(Base):
     __tablename__ = 'ida_raw_functions'
