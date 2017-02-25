@@ -1,9 +1,11 @@
 import os
+import re
 import math
 import models_ida
 import models_parser
 
 from config import CONFIG
+from sqlalchemy import select
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from paginate_sqlalchemy import SqlalchemyOrmPage
@@ -14,6 +16,7 @@ class IdaInfoParser(object):
     def __init__(self, db_file):
         self.db_file = db_file
         self.Session = sessionmaker()
+        self.pattern_member = re.compile('(.*) .*\w+')
 
     def __enter__(self):
         return self
@@ -172,8 +175,79 @@ class IdaInfoParser(object):
             self.session.add_all(function_deps)
         self.session.commit()
 
+    # todo : fetch depend from template
+    def __fetch_members(self, one_line):
+        local_types = set()
+
+        bracket = [one_line.find('{'), one_line.rfind('}')]
+        if -1 in bracket:
+            return local_types
+
+        raw_name = one_line[bracket[1] + 2:]
+
+        raw_parents = one_line[:bracket[0] - 1]
+        inheritance = raw_parents.find(':')
+        if inheritance != -1:
+            local_types.update(
+                raw_parents[inheritance + 1:].split(','))
+
+        raw_members = one_line[bracket[0] + 1:bracket[1]]
+        for member in raw_members.split(';'):
+            type_member = self.pattern_member.search(member)
+            if type_member is None:
+                continue
+
+            local_types.add(type_member.group(1).strip())
+
+        ret_local_types = set()
+        for lt in local_types:
+            ret_local_types.add(lt.strip())
+
+        return ret_local_types
+
     def __fetch_depend_local_types(self):
-        pass
+        local_types_table = (
+            select([models_parser.LocalType.id_ida])
+                .where(models_parser.LocalType.e_type.in_(['struct', 'union']))
+        )
+
+        query = self.session.query(models_ida.IdaRawLocalType) \
+            .filter(models_ida.IdaRawLocalType.id_ida.in_(local_types_table)) \
+            .order_by(models_ida.IdaRawLocalType.id)
+
+        count = query.count()
+        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
+        if CONFIG['verbose']:
+            print 'count local types: {count}'.format(count=count)
+            print 'count page: {count_page}'.format(count_page=count_page)
+
+        for i in range(1, count_page + 1):
+            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
+            local_type_deps = []
+            for item in page.items:
+                members_type = self.__fetch_members(item.get_one_line())
+                if len(members_type) == 0:
+                    continue
+
+                id_members_q = (
+                    select([models_ida.IdaRawLocalType.id_ida])
+                        .where(models_ida.IdaRawLocalType.name.in_(members_type))
+                )
+
+                dep_types = self.session.query(id_members_q).all()
+
+                for dep_type in dep_types:
+                    depend = models_parser.DependLocalType(
+                        id_local_type=item.get_id(),
+                        id_depend=dep_type.id_ida
+                    )
+                    local_type_deps.append(depend)
+
+            if CONFIG['verbose']:
+                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
+                                                                                count_item=len(page.items))
+            self.session.add_all(local_type_deps)
+        self.session.commit()
 
     def __linking_functions(self):
         pass
