@@ -3,6 +3,7 @@ import re
 import math
 import models_ida
 import models_parser
+import util_parser
 
 from config import CONFIG
 from sqlalchemy import select
@@ -175,7 +176,6 @@ class IdaInfoParser(object):
             self.session.add_all(function_deps)
         self.session.commit()
 
-    # todo : fetch depend from template
     def __fetch_members(self, one_line):
         local_types = set()
 
@@ -183,13 +183,38 @@ class IdaInfoParser(object):
         if -1 in bracket:
             return local_types
 
-        raw_name = one_line[bracket[1] + 2:]
-
         raw_parents = one_line[:bracket[0] - 1]
         inheritance = raw_parents.find(':')
         if inheritance != -1:
-            local_types.update(
-                raw_parents[inheritance + 1:].split(','))
+            parents = raw_parents[inheritance + 1:]
+            tmpl_pairs = list(util_parser.get_pairs_sym(parents, '<', '>'))
+            if 0 == len(tmpl_pairs):
+                local_types.update(parents.split(','))
+            else:
+                sets = set()
+                for tmpl_pair in tmpl_pairs:
+                    count_join = 0
+                    set_pair = set(xrange(tmpl_pair[0], tmpl_pair[1]))
+                    for tmpl_pair2 in tmpl_pairs:
+                        set_pair2 = set(xrange(tmpl_pair2[0], tmpl_pair2[1]))
+                        if set_pair <= set_pair2:
+                            count_join += 1
+
+                    sets.add((count_join, tmpl_pair))
+
+                for v in sets:
+                    (count, pair) = v
+                    if count != 1:
+                        continue
+
+                    if len(parents) == pair[1] + 1:
+                        parents += ','
+
+                    if parents[pair[1] + 1] == ',':
+                        parents = parents[:pair[1] + 1] + '!' + parents[pair[1] + 1:]
+
+                for parent in parents.split('!,'):
+                    local_types.add(parent.strip())
 
         raw_members = one_line[bracket[0] + 1:bracket[1]]
         for member in raw_members.split(';'):
@@ -197,7 +222,8 @@ class IdaInfoParser(object):
             if type_member is None:
                 continue
 
-            local_types.add(type_member.group(1).strip())
+            type_member = type_member.group(1).strip()
+            local_types.add(type_member)
 
         ret_local_types = set()
         for lt in local_types:
