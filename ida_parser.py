@@ -194,21 +194,22 @@ class IdaInfoParser(object):
                 sets = set()
                 for tmpl_pair in tmpl_pairs:
                     count_join = 0
-                    set_pair = set(xrange(tmpl_pair[0], tmpl_pair[1]))
                     for tmpl_pair2 in tmpl_pairs:
-                        set_pair2 = set(xrange(tmpl_pair2[0], tmpl_pair2[1]))
-                        if set_pair <= set_pair2:
-                            count_join += 1
+                        if not tmpl_pair2[0] <= tmpl_pair[0] <= tmpl_pair2[1]:
+                            continue
+
+                        if not tmpl_pair2[0] <= tmpl_pair[1] <= tmpl_pair2[1]:
+                            continue
+
+                        count_join += 1
 
                     sets.add((count_join, tmpl_pair))
 
+                parents += ','
                 for v in sets:
                     (count, pair) = v
                     if count != 1:
                         continue
-
-                    if len(parents) == pair[1] + 1:
-                        parents += ','
 
                     if parents[pair[1] + 1] == ',':
                         parents = parents[:pair[1] + 1] + '!' + parents[pair[1] + 1:]
