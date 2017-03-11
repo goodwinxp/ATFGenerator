@@ -277,11 +277,41 @@ class IdaInfoParser(object):
         self.session.commit()
 
     def __linking_functions(self):
-        pass
+        query = self.session.query(models_parser.Function)
+        count = query.count()
+        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
+        if CONFIG['verbose']:
+            print 'count functions: {count}'.format(count=count)
+            print 'count page: {count_page}'.format(count_page=count_page)
+
+        for i in range(1, count_page + 1):
+            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
+            function_link = []
+            for item in page.items:
+                owner_name = item.get_owner_name()
+                if owner_name is None:
+                    continue
+
+                id_local_type_q = (
+                    select([models_ida.IdaRawLocalType.id_ida])
+                        .where(models_ida.IdaRawLocalType.name == owner_name)
+                )
+
+                id_local_type = self.session.query(id_local_type_q).one_or_none()
+                if id_local_type is None:
+                    continue
+
+                depend = models_parser.LinkFunctions(
+                    id_function=item.get_id(),
+                    id_local_type=id_local_type[0]
+                )
+                function_link.append(depend)
+
+            if CONFIG['verbose']:
+                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
+                                                                                count_item=len(page.items))
+            self.session.add_all(function_link)
+        self.session.commit()
 
     def __linking_local_types(self):
-        self.__linking_namespace()
-        pass
-
-    def __linking_namespace(self):
         pass
