@@ -48,6 +48,7 @@ class Function(Base):
     id = Column('id', INTEGER, primary_key=True)
     id_ida = Column('id_ida', INTEGER)
     name = Column('name', TEXT)
+    owner_name = Column('owner_name', TEXT)
     return_type = Column('return_type', TEXT)
     args_type = Column('args_type', TEXT)
     args_name = Column('args_name', TEXT)
@@ -82,6 +83,9 @@ class Function(Base):
     def get_args_type(self):
         return json.loads(self.args_type)
 
+    def get_owner_name(self):
+        return self.owner_name
+
     def __parsing_name(self):
         self.name = self.raw_name
         if not self.name:
@@ -100,6 +104,7 @@ class Function(Base):
 
             pos = self.name.rfind('::')
             if pos != -1:
+                self.owner_name = self.name[:pos]
                 self.name = self.name[pos + 2:]
 
     def __decode_ida_type(self):
