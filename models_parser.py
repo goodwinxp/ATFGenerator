@@ -128,19 +128,6 @@ class Function(Base):
             self.args_name.append('arg_{cur}'.format(cur=i))
 
 
-class Namespace(Base):
-    __tablename__ = 'namespaces'
-    id = Column('id', INTEGER, primary_key=True)
-    name = Column('name', TEXT)
-
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return '{name}'.format(
-            name=self.name)
-
-
 class LinkNamespace(Base):
     """
     This table show relation A(id_local_type) <-> B(id_namespace)
@@ -159,15 +146,15 @@ class LinkNamespace(Base):
     __tablename__ = 'link_namespace'
     id = Column('id', INTEGER, primary_key=True)
     id_local_type = Column('id_local_type', INTEGER, ForeignKey('local_types.id'))
-    id_namespace = Column('id_namespace', INTEGER, ForeignKey('namespaces.id'))
+    namespace = Column('namespace', TEXT, nullable=True)
 
-    def __init__(self, id_local_type, id_namespace):
+    def __init__(self, id_local_type, namespace):
         self.id_local_type = id_local_type
-        self.id_namespace = id_namespace
+        self.namespace = namespace
 
     def __repr__(self):
-        return '{id_local_type} -> {id_namespace}'.format(
-            id_local_type=self.id_local_type, id_namespace=self.id_namespace)
+        return '{id_local_type} -> {namespace}'.format(
+            id_local_type=self.id_local_type, namespace=self.namespace)
 
 
 class LinkFunctions(Base):
@@ -183,11 +170,11 @@ class LinkFunctions(Base):
     """
     __tablename__ = 'link_function'
     id = Column('id', INTEGER, primary_key=True)
-    id_local_type = Column('id_local_type', INTEGER, ForeignKey('local_types.id'))
+    owner_name = Column('owner_name', TEXT, nullable=True)
     id_function = Column('id_function', INTEGER, ForeignKey('functions.id'))
 
-    def __init__(self, id_local_type, id_function):
-        self.id_local_type = id_local_type
+    def __init__(self, owner_name, id_function):
+        self.owner_name = owner_name
         self.id_function = id_function
 
     def __repr__(self):

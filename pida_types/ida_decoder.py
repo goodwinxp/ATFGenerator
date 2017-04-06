@@ -42,7 +42,6 @@ def decode_step(ida_type):
 
 # this method can be call ONLY TStruct and TTypedef
 def decode_hybrid_type(ida_type):
-    value = {'idt': None, 'value': None}
     rbyte = ord(ida_type[0])
     is_lt, ext = is_local_type(ida_type)
     if not is_lt:

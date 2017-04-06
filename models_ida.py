@@ -1,4 +1,3 @@
-from config import CONFIG
 from sqlalchemy import Column, INTEGER, TEXT, BLOB
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -50,6 +49,9 @@ class IdaRawLocalType(Base):
 
     def get_one_line(self):
         return self.one_line
+
+    def get_name(self):
+        return self.name
 
 
 class IdaRawFunctions(Base):
