@@ -1,6 +1,5 @@
 import os
 import re
-import math
 import models_ida
 import models_parser
 import util_parser
@@ -9,7 +8,6 @@ from config import CONFIG
 from sqlalchemy import select
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from paginate_sqlalchemy import SqlalchemyOrmPage
 from pida_types.types import IDA_TYPES
 
 
@@ -89,11 +87,9 @@ class IdaInfoParser(object):
             except:
                 print '[Error] function with id = {id}. catch exception'.format(id=item.get_id())
 
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(functions)
         self.session.commit()
@@ -115,11 +111,9 @@ class IdaInfoParser(object):
             local_type.parsing()
             local_types.append(local_type)
 
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(local_types)
         self.session.commit()
@@ -170,11 +164,9 @@ class IdaInfoParser(object):
                 )
                 function_deps.append(depend)
 
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(function_deps)
         self.session.commit()
@@ -268,11 +260,9 @@ class IdaInfoParser(object):
                     )
                     local_type_deps.append(depend)
 
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(local_type_deps)
         self.session.commit()
@@ -295,14 +285,29 @@ class IdaInfoParser(object):
             )
             function_link.append(depend)
 
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(function_link)
         self.session.commit()
+
+    def __link_local_types(self, parts):
+        s_names = list()
+        search_name = ''
+        for p in parts:
+            if len(search_name):
+                search_name += '::'
+
+            search_name += p
+            s_names.append(search_name)
+
+        q = self.session.query(models_ida.IdaRawLocalType)\
+            .filter(models_ida.IdaRawLocalType.name.in_(s_names))\
+            .order_by(models_ida.IdaRawLocalType.id.desc())
+
+        for lt in q.all():
+            yield (lt.get_id(), lt.get_name())
 
     def __linking_local_types(self):
         query = self.session.query(models_ida.IdaRawLocalType)
@@ -316,48 +321,30 @@ class IdaInfoParser(object):
         link_namespaces = []
         for item in query.all():
             index_item += 1
-            name = item.get_name()
 
-            parts = list(util_parser.split_name(name))
+            parts = list(util_parser.split_name(item.get_name()))
+            id_local_types = list(self.__link_local_types(parts))
 
-            search_name = ''
-            link_namespace = ''
-            id_local_types = list()
-            for p in parts:
-                if len(search_name):
-                    search_name += '::'
-
-                search_name += p
-
-                id_local_type_q = (
-                    select([models_ida.IdaRawLocalType.id_ida])
-                        .where(models_ida.IdaRawLocalType.name == search_name)
-                )
-
-                id_local_type = self.session.query(id_local_type_q).one_or_none()
-                if id_local_type is None:
-                    if len(id_local_types) == 0:
-                        link_namespace = search_name
-                    continue
-
-                if item.get_id() == id_local_type[0]:
-                    continue
-
-                id_local_types.append(id_local_type[0])
-
-            id_local_types.append(item.get_id())
-
-            id_parent = id_local_types[0]
-            for id in id_local_types[1:]:
+            id_parent = id_local_types[0][0]
+            for id_lt in id_local_types[1:]:
                 link_lt = models_parser.LinkLocalType(
                     id_parent=id_parent,
-                    id_child=id
+                    id_child=id_lt[0]
                 )
-                id_parent = id
+                id_parent = id_lt[0]
                 link_local_types.append(link_lt)
 
-            if len(parts) == len(id_local_types) or len(link_namespace) == 0:
+            link_namespace = ''
+            _diff = len(parts) - len(id_local_types)
+            if _diff == 0:
                 link_namespace = None
+            else:
+                for p in parts[:_diff]:
+                    if len(link_namespace):
+                        link_namespace += '::'
+
+                    link_namespace += p
+
 
             link = models_parser.LinkNamespace(
                 id_local_type=item.get_id(),
@@ -365,11 +352,9 @@ class IdaInfoParser(object):
             )
 
             link_namespaces.append(link)
-            if not CONFIG['verbose']:
-                continue
-
-            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
-                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
 
         self.session.bulk_save_objects(link_local_types)
         self.session.bulk_save_objects(link_namespaces)
