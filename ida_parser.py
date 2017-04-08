@@ -9,7 +9,6 @@ from config import CONFIG
 from sqlalchemy import select
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 from paginate_sqlalchemy import SqlalchemyOrmPage
 from pida_types.types import IDA_TYPES
 
@@ -71,55 +70,57 @@ class IdaInfoParser(object):
     def __parsing_functions(self):
         query = self.session.query(models_ida.IdaRawFunctions)
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
             print 'count functions: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
 
+        index_item = 0
         functions = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                function = models_parser.Function(
-                    id_ida=item.get_id(),
-                    raw_name=item.get_name(),
-                    ida_type=item.get_type(),
-                    ida_fields=item.get_args_name(),
-                )
-                try:
-                    function.parsing()
-                    functions.append(function)
-                except:
-                    print '[Error] function with id = {id}. catch exception'.format(id=item.get_id())
+        for item in query.all():
+            index_item += 1
+            function = models_parser.Function(
+                id_ida=item.get_id(),
+                raw_name=item.get_name(),
+                ida_type=item.get_type(),
+                ida_fields=item.get_args_name(),
+            )
+            try:
+                function.parsing()
+                functions.append(function)
+            except:
+                print '[Error] function with id = {id}. catch exception'.format(id=item.get_id())
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(functions)
         self.session.commit()
 
     def __parsing_local_types(self):
         query = self.session.query(models_ida.IdaRawLocalType)
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
-            print 'count local types: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
+            print 'count local_type: {count}'.format(count=count)
 
+        index_item = 0
         local_types = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                local_type = models_parser.LocalType(
-                    id_ida=item.get_id(),
-                    raw_multi=item.get_type(),
-                )
-                local_type.parsing()
-                local_types.append(local_type)
+        for item in query.all():
+            index_item += 1
+            local_type = models_parser.LocalType(
+                id_ida=item.get_id(),
+                raw_multi=item.get_type(),
+            )
+            local_type.parsing()
+            local_types.append(local_type)
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(local_types)
         self.session.commit()
 
@@ -150,30 +151,31 @@ class IdaInfoParser(object):
     def __fetch_depend_functions(self):
         query = self.session.query(models_parser.Function)
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
             print 'count functions: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
 
         function_deps = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                all_types = item.get_args_type()
-                all_types.append(item.get_return_type())
+        index_item = 0
+        for item in query.all():
+            index_item += 1
+            all_types = item.get_args_type()
+            all_types.append(item.get_return_type())
 
-                dep_types = self.__fetch_local_type(all_types)
+            dep_types = self.__fetch_local_type(all_types)
 
-                for dep_type in dep_types:
-                    depend = models_parser.DependFunction(
-                        id_function=item.get_id(),
-                        id_local_type=dep_type['value']
-                    )
-                    function_deps.append(depend)
+            for dep_type in dep_types:
+                depend = models_parser.DependFunction(
+                    id_function=item.get_id(),
+                    id_local_type=dep_type['value']
+                )
+                function_deps.append(depend)
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(function_deps)
         self.session.commit()
 
@@ -244,22 +246,17 @@ class IdaInfoParser(object):
             .order_by(models_ida.IdaRawLocalType.id)
 
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
-            print 'count local types: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
+            print 'count local_type: {count}'.format(count=count)
 
+        index_item = 0
         local_type_deps = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                members_type = self.__fetch_members(item.get_one_line())
-                if len(members_type) == 0:
-                    continue
-
+        for item in query.all():
+            index_item += 1
+            members_type = self.__fetch_members(item.get_one_line())
+            if len(members_type):
                 id_members_q = (
-                    select([models_ida.IdaRawLocalType.id_ida])
-                        .where(models_ida.IdaRawLocalType.name.in_(members_type))
+                    select([models_ida.IdaRawLocalType.id_ida]).where(models_ida.IdaRawLocalType.name.in_(members_type))
                 )
 
                 dep_types = self.session.query(id_members_q).all()
@@ -271,126 +268,109 @@ class IdaInfoParser(object):
                     )
                     local_type_deps.append(depend)
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(local_type_deps)
         self.session.commit()
 
     def __linking_functions(self):
         query = self.session.query(models_parser.Function)
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
-            print 'count functions: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
+            print 'count local_type: {count}'.format(count=count)
 
+        index_item = 0
         function_link = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                owner_name = item.get_owner_name()
+        for item in query.all():
+            index_item += 1
+            owner_name = item.get_owner_name()
 
-                depend = models_parser.LinkFunctions(
-                    id_function=item.get_id(),
-                    owner_name=owner_name
-                )
-                function_link.append(depend)
+            depend = models_parser.LinkFunctions(
+                id_function=item.get_id(),
+                owner_name=owner_name
+            )
+            function_link.append(depend)
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(function_link)
         self.session.commit()
-
-    def __split_name(self, name):
-        br_open = 0
-        delim = False
-        indx = [0, 0]
-        for ch in name:
-            indx[1] += 1
-            if ch == '<':
-                br_open += 1
-            elif ch == '>':
-                br_open -= 1
-            elif ch == ':' and br_open == 0:
-                if not delim:
-                    delim = True
-                    continue
-
-                yield name[indx[0]:indx[1] - 2]
-                indx[0] = indx[1]
-                delim = False
-
-        yield name[indx[0]:indx[1]]
 
     def __linking_local_types(self):
         query = self.session.query(models_ida.IdaRawLocalType)
 
         count = query.count()
-        count_page = int(math.ceil(count / float(CONFIG['page_size'])))
         if CONFIG['verbose']:
-            print 'count local types: {count}'.format(count=count)
-            print 'count page: {count_page}'.format(count_page=count_page)
+            print 'count local_type: {count}'.format(count=count)
 
+        index_item = 0
         link_local_types = []
         link_namespaces = []
-        for i in range(1, count_page + 1):
-            page = SqlalchemyOrmPage(query, page=i, items_per_page=CONFIG['page_size'])
-            for item in page.items:
-                name = item.get_name()
+        for item in query.all():
+            index_item += 1
+            name = item.get_name()
 
-                parts = list(self.__split_name(name))
+            parts = list(util_parser.split_name(name))
 
-                search_name = ''
-                link_namespace = ''
-                id_local_types = list()
-                for p in parts:
-                    if len(search_name):
-                        search_name += '::'
+            search_name = ''
+            link_namespace = ''
+            id_local_types = list()
+            for p in parts:
+                if len(search_name):
+                    search_name += '::'
 
-                    search_name += p
+                search_name += p
 
-                    id_local_type_q = (
-                        select([models_ida.IdaRawLocalType.id_ida])
-                            .where(models_ida.IdaRawLocalType.name == search_name)
-                    )
-
-                    id_local_type = self.session.query(id_local_type_q).one_or_none()
-                    if id_local_type is None:
-                        if len(id_local_types) == 0:
-                            link_namespace = search_name
-                        continue
-
-                    if item.get_id() == id_local_type[0]:
-                        continue
-
-                    id_local_types.append(id_local_type[0])
-
-                id_local_types.append(item.get_id())
-
-                id_parent = id_local_types[0]
-                for id in id_local_types[1:]:
-                    link_lt = models_parser.LinkLocalType(
-                        id_parent=id_parent,
-                        id_child=id
-                    )
-                    id_parent = id
-                    link_local_types.append(link_lt)
-
-                if len(parts) == len(id_local_types) or len(link_namespace) == 0:
-                    link_namespace = None
-
-                link = models_parser.LinkNamespace(
-                    id_local_type=item.get_id(),
-                    namespace=link_namespace
+                id_local_type_q = (
+                    select([models_ida.IdaRawLocalType.id_ida])
+                        .where(models_ida.IdaRawLocalType.name == search_name)
                 )
 
-                link_namespaces.append(link)
+                id_local_type = self.session.query(id_local_type_q).one_or_none()
+                if id_local_type is None:
+                    if len(id_local_types) == 0:
+                        link_namespace = search_name
+                    continue
 
-            if CONFIG['verbose']:
-                print 'page({current}/{count_page}) items({count_item})'.format(current=i, count_page=count_page,
-                                                                                count_item=len(page.items))
+                if item.get_id() == id_local_type[0]:
+                    continue
+
+                id_local_types.append(id_local_type[0])
+
+            id_local_types.append(item.get_id())
+
+            id_parent = id_local_types[0]
+            for id in id_local_types[1:]:
+                link_lt = models_parser.LinkLocalType(
+                    id_parent=id_parent,
+                    id_child=id
+                )
+                id_parent = id
+                link_local_types.append(link_lt)
+
+            if len(parts) == len(id_local_types) or len(link_namespace) == 0:
+                link_namespace = None
+
+            link = models_parser.LinkNamespace(
+                id_local_type=item.get_id(),
+                namespace=link_namespace
+            )
+
+            link_namespaces.append(link)
+            if not CONFIG['verbose']:
+                continue
+
+            if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
         self.session.bulk_save_objects(link_local_types)
         self.session.bulk_save_objects(link_namespaces)
         self.session.commit()

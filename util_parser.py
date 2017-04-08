@@ -48,3 +48,25 @@ def get_first_pair_sym(data, sym_open, sym_close):
         return pairs[0]
 
     return None
+
+
+def split_name(name):
+    br_open = 0
+    delim = False
+    indx = [0, 0]
+    for ch in name:
+        indx[1] += 1
+        if ch == '<':
+            br_open += 1
+        elif ch == '>':
+            br_open -= 1
+        elif ch == ':' and br_open == 0:
+            if not delim:
+                delim = True
+                continue
+
+            yield name[indx[0]:indx[1] - 2]
+            indx[0] = indx[1]
+            delim = False
+
+    yield name[indx[0]:indx[1]]
