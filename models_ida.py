@@ -38,7 +38,7 @@ class IdaRawLocalType(Base):
         self.multi_line = multi_line
 
     def __repr__(self):
-        return '"{name}" : {one_line}'.format(
+        return '"{name}"'.format(
             name=self.name, one_line=self.one_line)
 
     def get_id(self):

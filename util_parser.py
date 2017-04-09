@@ -69,4 +69,5 @@ def split_name(name):
             indx[0] = indx[1]
             delim = False
 
-    yield name[indx[0]:indx[1]]
+    if len(name):
+        yield name[indx[0]:indx[1]]
