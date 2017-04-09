@@ -256,11 +256,12 @@ class IdaInfoParser(object):
                 dep_types = self.session.query(id_members_q).all()
 
                 for dep_type in dep_types:
-                    depend = models_parser.DependLocalType(
-                        id_local_type=item.get_id(),
-                        id_depend=dep_type.id_ida
-                    )
-                    local_type_deps.append(depend)
+                    if item.get_id() != dep_type.id_ida:
+                        depend = models_parser.DependLocalType(
+                            id_local_type=item.get_id(),
+                            id_depend=dep_type.id_ida
+                        )
+                        local_type_deps.append(depend)
 
             if CONFIG['verbose']:
                 if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
