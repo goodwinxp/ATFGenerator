@@ -156,6 +156,9 @@ class LinkNamespace(Base):
         return '{id_local_type} -> {namespace}'.format(
             id_local_type=self.id_local_type, namespace=self.namespace)
 
+    def get_namespace(self):
+        return self.namespace
+
 
 class LinkFunctions(Base):
     """
