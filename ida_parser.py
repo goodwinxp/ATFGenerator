@@ -45,6 +45,7 @@ class IdaInfoParser(object):
     def __linking(self):
         self.__linking_functions()
         self.__linking_local_types()
+        # todo : add link for typedef
 
     def __drop_tables(self):
         models_parser.Base.metadata.drop_all(self.engine_db)
