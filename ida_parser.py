@@ -8,6 +8,7 @@ from config import CONFIG
 from sqlalchemy import select
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import func
 from pida_types.types import IDA_TYPES
 
 
@@ -39,6 +40,7 @@ class IdaInfoParser(object):
     def __fetch_depend(self):
         self.__fetch_depend_functions()
         self.__fetch_depend_local_types()
+        # todo : add fetch depend for typedef
 
     def __linking(self):
         self.__linking_functions()
@@ -229,8 +231,7 @@ class IdaInfoParser(object):
 
     def __fetch_depend_local_types(self):
         local_types_table = (
-            select([models_parser.LocalType.id_ida])
-                .where(models_parser.LocalType.e_type.in_(['struct', 'union']))
+            select([models_parser.LocalType.id_ida]).where(models_parser.LocalType.e_type.in_(['struct', 'union']))
         )
 
         query = self.session.query(models_ida.IdaRawLocalType) \
@@ -304,7 +305,7 @@ class IdaInfoParser(object):
 
         q = self.session.query(models_ida.IdaRawLocalType)\
             .filter(models_ida.IdaRawLocalType.name.in_(s_names))\
-            .order_by(models_ida.IdaRawLocalType.id.desc())
+            .order_by(func.length(models_ida.IdaRawLocalType.name))
 
         for lt in q.all():
             yield (lt.get_id(), lt.get_name())
@@ -325,13 +326,11 @@ class IdaInfoParser(object):
             parts = list(util_parser.split_name(item.get_name()))
             id_local_types = list(self.__link_local_types(parts))
 
-            id_parent = id_local_types[0][0]
-            for id_lt in id_local_types[1:]:
+            if len(id_local_types) >= 2:
                 link_lt = models_parser.LinkLocalType(
-                    id_parent=id_parent,
-                    id_child=id_lt[0]
+                    id_parent=id_local_types[-2][0],
+                    id_child=item.get_id()
                 )
-                id_parent = id_lt[0]
                 link_local_types.append(link_lt)
 
             link_namespace = ''
