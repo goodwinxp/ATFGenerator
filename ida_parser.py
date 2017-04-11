@@ -40,7 +40,7 @@ class IdaInfoParser(object):
     def __fetch_depend(self):
         self.__fetch_depend_functions()
         self.__fetch_depend_local_types()
-        # todo : add fetch depend for typedef
+        self.__fetch_depend_typedefs()
 
     def __linking(self):
         self.__linking_functions()
@@ -270,6 +270,45 @@ class IdaInfoParser(object):
         self.session.bulk_save_objects(local_type_deps)
         self.session.commit()
 
+    def __fetch_depend_typedefs(self):
+        local_types_table = (
+            select([models_parser.LocalType.id_ida]).where(models_parser.LocalType.e_type == 'typedef')
+        )
+
+        query = self.session.query(models_ida.IdaRawLocalType) \
+            .filter(models_ida.IdaRawLocalType.id_ida.in_(local_types_table)) \
+            .order_by(models_ida.IdaRawLocalType.id)
+
+        count = query.count()
+        if CONFIG['verbose']:
+            print 'count typedef: {count}'.format(count=count)
+
+        index_item = 0
+        local_type_deps = []
+        for item in query.all():
+            index_item += 1
+
+            type_member = self.pattern_member.search(item.get_one_line())
+            id_members_q = (
+                select([models_ida.IdaRawLocalType.id_ida]).where(
+                    models_ida.IdaRawLocalType.name == type_member.group(1).strip())
+            )
+
+            dep_type = self.session.query(id_members_q).one_or_none()
+            if dep_type is not None and item.get_id() != dep_type.id_ida:
+                depend = models_parser.DependLocalType(
+                    id_local_type=item.get_id(),
+                    id_depend=dep_type.id_ida
+                )
+                local_type_deps.append(depend)
+
+            if CONFIG['verbose']:
+                if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):
+                    print 'items({current}/{count_item})'.format(current=index_item, count_item=count)
+
+        self.session.bulk_save_objects(local_type_deps)
+        self.session.commit()
+
     def __linking_functions(self):
         query = self.session.query(models_parser.Function)
         count = query.count()
@@ -305,8 +344,8 @@ class IdaInfoParser(object):
             search_name += p
             s_names.append(search_name)
 
-        q = self.session.query(models_ida.IdaRawLocalType)\
-            .filter(models_ida.IdaRawLocalType.name.in_(s_names))\
+        q = self.session.query(models_ida.IdaRawLocalType) \
+            .filter(models_ida.IdaRawLocalType.name.in_(s_names)) \
             .order_by(func.length(models_ida.IdaRawLocalType.name))
 
         for lt in q.all():
@@ -345,7 +384,6 @@ class IdaInfoParser(object):
                         link_namespace += '::'
 
                     link_namespace += p
-
 
             link = models_parser.LinkNamespace(
                 id_local_type=item.get_id(),
