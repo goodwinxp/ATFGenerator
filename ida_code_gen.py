@@ -54,8 +54,8 @@ class IdaCodeGen(object):
         self.__generate_local_types()
         self.__generate_typedef_enum()
 
-    def __build_typedef_enum(self, item, items_info, namespace):
-        data = item.get_type()
+    def __build_typedef_enum(self, _item, items_info, namespace):
+        data = _item.get_type()
         if len(namespace):
             data = data.replace(namespace + '::', '')
 
@@ -195,6 +195,13 @@ class IdaCodeGen(object):
         name = name.replace(':', '_')
         return name
 
+    def __add_padding(self, payload, level):
+        padding = ''.join(['    ' for x in xrange(0, level)])
+        payload = padding + payload
+        payload = re.sub('\n', '\n' + padding, payload)
+
+        return payload
+
     def __generate_type(self, item, fn_build):
         name = item.get_name()
         namespace = self.__get_namespace(item.get_id())
@@ -230,12 +237,9 @@ class IdaCodeGen(object):
         dependencies -= set([item])
 
         parts_namespace = list(util_parser.split_name(namespace.replace('<', '').replace('>', '')))
-        padding = ''.join(['    ' for x in xrange(0, 1 + len(parts_namespace))])
 
-        payload = fn_build(item=item, items_info=item_info, namespace=namespace)
-        payload = padding + payload
-        payload = re.sub('\n ', '\n   ', payload)
-        payload = re.sub('\n', '\n' + padding, payload)
+        payload = fn_build(_item=item, items_info=item_info, namespace=namespace)
+        payload = self.__add_padding(payload=payload, level=1 + len(parts_namespace))
 
         name = self.__trimming_name(name)
         filename = self.out_gen + '/' + name + '.hpp'
@@ -272,8 +276,11 @@ class IdaCodeGen(object):
             f_type.write('\nEND_ATF_NAMESPACE\n')
             f_type.close()
 
-    def __build_local_type(self, item, items_info, namespace):
+    def __build_local_type(self, _item, items_info, namespace):
+        (item, level, funcs, childs) = items_info
+
         data = item.get_type()
+        data = re.sub('\n ', '\n   ', data)
 
         align_size = 0
         align = re.search('struct .*__declspec\(align\(([0-9]+)', data)
@@ -281,12 +288,17 @@ class IdaCodeGen(object):
             align_size = align.group(1).strip()
             data = re.sub('__declspec\(align\(([0-9]+)\)\) ', '', data)
 
-        # todo :
+        data_childs = ''
+        for child in childs:
+            body = self.__build_local_type(_item, child, namespace)
+            data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
 
-        # items = child + parent
-        # inserted_child = item[0]
-        # for c in items[1:]
-        # inserted_child += c
+        pair_sym = util_parser.get_last_pair_sym(data, '{', '}')
+        if pair_sym:
+            data = '{first_part}{data_childs}{second_part}'.format(
+                first_part=data[:pair_sym[0] + 1],
+                data_childs=data_childs,
+                second_part=data[pair_sym[0] + 1:]).replace(item.get_name() + '::', '')
 
         # add trim_namespace::detail
         # add details
@@ -298,9 +310,10 @@ class IdaCodeGen(object):
         data = data.replace('__unaligned ', ' ')
         data = data[:-1] + ';'
 
-        data = '#pragma pack(push, {align})\n{data}\n#pragma pack(pop)'.format(align=align_size, data=data)
+        if align_size and level == 0:
+            data = '#pragma pack(push, {align})\n{data}\n#pragma pack(pop)'.format(align=align_size, data=data)
 
-        return data
+        return self.__add_padding(payload=data, level=level)
 
     def __generate_local_types(self):
         q_types = (
