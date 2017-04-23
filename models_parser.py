@@ -74,6 +74,9 @@ class Function(Base):
         self.return_type = json.dumps(self.return_type, separators=(',', ':'))
         self.conv_call = json.dumps(self.conv_call, separators=(',', ':'))
 
+    def get_name(self):
+        return self.name
+
     def get_id(self):
         return self.id
 
@@ -83,8 +86,14 @@ class Function(Base):
     def get_args_type(self):
         return json.loads(self.args_type)
 
+    def get_args_name(self):
+        return json.loads(self.args_name)
+
     def get_owner_name(self):
         return self.owner_name
+
+    def get_conv_call(self):
+        return json.loads(self.conv_call)['value']
 
     def __parsing_name(self):
         self.name = self.raw_name
