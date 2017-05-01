@@ -79,6 +79,15 @@ class IdaRawFunctions(Base):
         return '"{name}" : {start}'.format(
             name=self.short_name, start=self.start)
 
+    def get_start(self):
+        return self.start
+
+    def get_end(self):
+        return self.end
+
+    def get_size(self):
+        return self.end - self.start
+
     def get_id(self):
         return self.id
 
@@ -95,6 +104,9 @@ class IdaRawFunctions(Base):
             return self.mangled_name
 
         return ''
+
+    def get_long_name(self):
+        return self.long_name
 
     def get_type(self):
         return self.ida_type

@@ -1,3 +1,4 @@
+import models_ida
 from abc_type import IdaTypes
 from types import IDA_TYPES
 
@@ -19,6 +20,14 @@ class IdaTLocalType(IdaTypes):
 
     def get_type(self):
         return self.ida_type
+
+    def to_string(self, session):
+        query = session.query(models_ida.IdaRawLocalType.name) \
+            .filter(models_ida.IdaRawLocalType.id_ida == self.ida_type['value'])
+        return 'struct ' + query.one()[0] + '{ptr} {name}'
+
+    def from_dict(self, data):
+        self.ida_type = data
 
     def __set_normal_id(self, normal_id):
         self.normal_id = normal_id

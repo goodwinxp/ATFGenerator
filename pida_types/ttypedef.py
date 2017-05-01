@@ -1,5 +1,6 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
+from serializer_ida_type import serialize_to_string
 
 
 class IdaTTypedef(IdaTypes):
@@ -16,3 +17,11 @@ class IdaTTypedef(IdaTypes):
 
     def get_type(self):
         return self.ida_type
+
+    def to_string(self, session):
+        return serialize_to_string(self.ida_type['value'], session)\
+                   .replace(' {name}', '')\
+                   .replace('{ptr}', '') + '{ptr} {name}'
+
+    def from_dict(self, data):
+        self.ida_type = data

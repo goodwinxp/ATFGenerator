@@ -6,6 +6,7 @@ from tstruct import IdaTStruct
 from tarray import IdaTArray
 from tenum import IdaTEnum
 from tbase import IdaTBase
+from tstr import IdaTStr
 from types import IDA_TYPES
 
 PIDA_TYPES = {
@@ -34,5 +35,6 @@ PIDA_TYPES = {
     IDA_TYPES['char']: IdaTBase,
     IDA_TYPES['typedef']: IdaTTypedef,
     IDA_TYPES['args']: IdaTBase,
-    IDA_TYPES['local_type']: IdaTLocalType
+    IDA_TYPES['local_type']: IdaTLocalType,
+    IDA_TYPES['str']: IdaTStr
 }

@@ -1,5 +1,6 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
+from pida_types.serializer_ida_type import serialize_to_string
 
 
 class IdaTFunctions(IdaTypes):
@@ -55,6 +56,24 @@ class IdaTFunctions(IdaTypes):
 
     def get_ret_type(self):
         return self.ida_type['value']['ret_type']
+
+    def build_def(self, session):
+        tmpl = '{return_type} (WINAPIV{ptr} {name})({args_type})'
+        ret_type = serialize_to_string(self.get_ret_type(), session).replace(' {name}', '').replace('{ptr}', '')
+        args_type = list(
+            [serialize_to_string(arg_type, session).replace(' {name}', '').replace('{ptr}', '') for arg_type in
+             self.ida_type['value']['args_type']])
+
+        return tmpl.format(return_type=ret_type,
+                           ptr='{ptr}',
+                           name='{name}',
+                           args_type=', '.join([x for x in args_type]))
+
+    def to_string(self, session):
+        return self.build_def(session)
+
+    def from_dict(self, data):
+        self.ida_type = data
 
 
 CONVENTION_CALL_NM = {

@@ -49,8 +49,8 @@ def main(argv):
         print 'out_dir: ' + CONFIG['out_dir']
         print 'verbose: ' + str(CONFIG['verbose'])
 
-    parser = IdaInfoParser(CONFIG['database'])
-    parser.start()
+    #parser = IdaInfoParser(CONFIG['database'])
+    #parser.start()
 
     code_gen = IdaCodeGen(CONFIG['database'], CONFIG['out_dir'])
     code_gen.start()

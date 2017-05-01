@@ -1,4 +1,5 @@
 from abc_type import IdaTypes
+from pida_types.serializer_ida_type import serialize_to_string
 from types import IDA_TYPES
 
 
@@ -24,3 +25,9 @@ class IdaTArray(IdaTypes):
 
     def get_type(self):
         return self.ida_type
+
+    def to_string(self, session):
+        return serialize_to_string(self.ida_type['value']['type'], session).format(ptr='*{ptr}', name='{name}')
+
+    def from_dict(self, data):
+        self.ida_type = data

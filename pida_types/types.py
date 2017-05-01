@@ -49,8 +49,8 @@ IDA_TYPES_RW = {
     IDA_TYPES['uint16_t']: 'uint16_t',
     IDA_TYPES['uint32_t']: 'uint32_t',
     IDA_TYPES['uint64_t']: 'uint64_t',
-    IDA_TYPES['ushort']: 'ushort',
-    IDA_TYPES['uint']: 'uint',
+    IDA_TYPES['ushort']: 'unsigned short',
+    IDA_TYPES['uint']: 'unsigned int',
     IDA_TYPES['long double']: 'long double',
     IDA_TYPES['enum']: 'enum',
     IDA_TYPES['char']: 'char',
@@ -73,7 +73,7 @@ def is_const_type(e_type):
 def get_base_name(e_type):
     search_type = e_type & 0xFFBF
 
-    value = IDA_TYPES_RW.get(search_type, default='unknown')
+    value = IDA_TYPES_RW.get(search_type, 'unknown')
     assert not value == 'unknown', e_type
 
     return value
