@@ -7,9 +7,6 @@ class IdaTPointer(IdaTypes):
     def __init__(self, ida_type=IDA_TYPES['pointer']):
         self.ida_type = {'idt': ida_type, 'value': None}
 
-    def __init__(self, idt):
-        self.ida_type = idt
-
     def decode(self, data):
         from ida_decoder import decode_step
 
