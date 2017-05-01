@@ -14,6 +14,8 @@ from config import CONFIG
 from pida_types.serializer_ida_type import serialize_to_string
 
 
+# todo : add list with mask name for ignoring
+
 class IdaCodeGen(object):
     def __init__(self, db_file, out_gen):
         self.db_file = db_file
