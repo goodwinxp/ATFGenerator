@@ -300,8 +300,8 @@ class IdaCodeGen(object):
         tmpl = '''
     {specifier}{return_type}{name}({args})
     {{
-        using {name}_ptr = {return_type_typedef}(WINAPIV*)({args_type});
-        static {name}_ptr orig_method(({name}_ptr){org_address});
+        using org_ptr = {return_type_typedef}(WINAPIV*)({args_type});
+        static org_ptr orig_method((org_ptr){org_address});
         {org_return}orig_method({name_args});
     }};'''
         args_name = func.get_args_name()
@@ -390,28 +390,29 @@ class IdaCodeGen(object):
                     if raw_func.get_size() == 5 and len(funcs) > 1:
                         continue
 
-                    dctor = False
                     clean_owner = func.get_owner_name()
                     if len(namespace):
                         clean_owner = clean_owner.replace(namespace + '::', '')
 
                     if func_name == clean_owner:
                         func_name = 'ctor_' + func_name
-                        dctor = True
                     elif func_name == '~' + clean_owner:
                         func_name = 'dtor_' + func_name[1:]
-                        dctor = True
 
-                    data_functions += self.__build_function(v, func_name, dctor)
+                    data_functions += self.__build_function(v, func_name, False)
 
             if len(data_functions):
                 data_functions = 'public:' + data_functions + '\n'
+
+            name = item.get_name() + '::'
+            if len(namespace):
+                name = name.replace(namespace + '::', '')
 
             data = '{first_part}{data_childs}{second_part}{functions}}}\n'.format(
                 first_part=definition,
                 data_childs=data_childs,
                 second_part=members,
-                functions=data_functions).replace(item.get_name() + '::', '')
+                functions=data_functions).replace(name, '')
 
         # todo : gererate detail
 
