@@ -397,8 +397,10 @@ class IdaCodeGen(object):
                         clean_owner = clean_owner.replace(namespace + '::', '')
 
                     if func_name == clean_owner:
+                        data_functions += self.__build_function(v, func_name, True)
                         func_name = 'ctor_' + func_name
                     elif func_name == '~' + clean_owner:
+                        data_functions += self.__build_function(v, func_name, True)
                         func_name = 'dtor_' + func_name[1:]
 
                     data_functions += self.__build_function(v, func_name, False)
