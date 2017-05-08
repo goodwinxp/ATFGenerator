@@ -26,7 +26,12 @@ def decode_step(ida_type):
         offset += rbyte
         return offset, ttype.get_type()
 
-    if itype in [0xfe, 0xff]:
+    if itype == 0xff and ord(ida_type[1]) == 0x41:
+        offset += 1
+        itype = ord(ida_type[offset])
+        offset += 1
+
+    elif itype in [0xfe, 0xff]:
         itype = ord(ida_type[offset])
         offset += 1
 
