@@ -80,7 +80,7 @@ CONVENTION_CALL_NM = {
     '__cdecl': [0x20, 0x21, 0x30, 0xAF],
     '__stdcall': [0x31, 0x51],
     '__pascal': [0x40],
-    '__fastcall': [0x70]
+    '__fastcall': [0x70, 0x11]
 }
 
 
