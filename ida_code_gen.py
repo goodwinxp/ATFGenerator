@@ -400,6 +400,7 @@ class IdaCodeGen(object):
                 if namespace and len(namespace):
                     clean_owner = clean_owner.replace(namespace + '::', '')
 
+                clean_owner = self.__trimming_name(clean_owner)
                 if func_name.startswith('~'):
                     yield fn_builder(v, func_name, True, indx, prefix)
                     func_name = 'dtor_' + func_name[1:]
