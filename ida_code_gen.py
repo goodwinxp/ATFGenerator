@@ -20,6 +20,7 @@ class IdaCodeGen(object):
         self.out_gen = out_gen
         self.Session = sessionmaker()
         self.reg_name = []
+        self.black_list = []
 
     def __enter__(self):
         return self
@@ -217,10 +218,16 @@ class IdaCodeGen(object):
         return payload
 
     def __generate_type(self, item, fn_build):
+
         name = item.get_name()
+
         namespace = self.__get_namespace(item.get_id())
         if namespace is None:
             namespace = ''
+
+        for bname in self.black_list:
+            if re.search(pattern=bname, string=name) or re.search(pattern=bname, string=namespace):
+                return
 
         if name[len(namespace):].find('<') != -1:
             with open(self.out_gen + '/detect_templates.log', 'a') as f_detect:
@@ -845,7 +852,12 @@ private:
                           my_namespace=True)
         pass
 
+    def __read_black_list(self):
+        with open(CONFIG['black_list'], 'r') as f_list:
+            self.black_list = list([line.strip() for line in f_list])
+
     def __code_gen(self):
+        self.__read_black_list()
         self.__adjust_folder()
         self.__copy_common()
         self.__generate_code()
