@@ -390,6 +390,9 @@ class IdaCodeGen(object):
                 if func_name.find('`') != -1:
                     continue
 
+                if func_name.find('operator') != -1:
+                    continue
+
                 if raw_func.get_size() == 5 and len(funcs) > 1:
                     continue
 
