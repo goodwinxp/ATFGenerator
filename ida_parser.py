@@ -287,9 +287,6 @@ class IdaInfoParser(object):
         for item in query.all():
             index_item += 1
 
-            # todo : add parsing by this example:
-            # typedef void (WINAPIV *CS_TYPE_NET_SIZE_ROUTINE)(void *, unsigned int, unsigned int, _IDL_CS_CONVERT *, unsigned int *, unsigned int *);
-
             type_member = self.pattern_member.search(item.get_one_line())
             id_members_q = (
                 select([models_ida.IdaRawLocalType.id_ida]).where(
