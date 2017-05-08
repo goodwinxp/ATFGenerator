@@ -288,14 +288,14 @@ class IdaCodeGen(object):
                             '{{\n' \
                             '    public: void registry() {{\n' \
                             '        auto& hook_core = CCoreWrapper::getInstance();\n' \
-                            '        for (auto& r : {name}_functions)\n' \
+                            '        for (auto& r : {namespace_detail}{name}_functions)\n' \
                             '            hook_core.reg_wrapper(r.pBind, r);\n' \
                             '    }}\n' \
                             '}};\n'
 
-            self.__write_file(payload=tmpl_registry.format(name=name),
+            self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
                               name=name + '_registry',
-                              namespace=namespace_detail,
+                              namespace='registry',
                               dependencies=set([name + '_detail']),
                               my_namespace=True)
 
@@ -785,14 +785,14 @@ class IdaCodeGen(object):
                         '{{\n' \
                         '    public: void registry() {{\n' \
                         '        auto& hook_core = CCoreWrapper::getInstance();\n' \
-                        '        for (auto& r : {name}_functions)\n' \
+                        '        for (auto& r : {namespace_detail}{name}_functions)\n' \
                         '            hook_core.reg_wrapper(r.pBind, r);\n' \
                         '    }}\n' \
                         '}};\n'
 
-        self.__write_file(payload=tmpl_registry.format(name=name),
+        self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
                           name=name + '_registry',
-                          namespace=namespace_detail,
+                          namespace='registry',
                           dependencies=set([name + '_detail']),
                           my_namespace=True)
 
