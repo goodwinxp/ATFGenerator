@@ -14,8 +14,6 @@ from config import CONFIG
 from pida_types.serializer_ida_type import serialize_to_string
 
 
-# todo : add list with mask name for ignoring
-
 class IdaCodeGen(object):
     def __init__(self, db_file, out_gen):
         self.db_file = db_file
@@ -56,9 +54,9 @@ class IdaCodeGen(object):
         shutil.copytree(common_dir, self.out_gen + common_dir)
 
     def __generate_code(self):
+        self.__generate_global_funcs()
         self.__generate_local_types()
         self.__generate_typedef_enum()
-        # todo : generate global namespace with function where owner_name ISNULL
 
     def __build_typedef_enum(self, _item, items_info, namespace):
         data = _item.get_type()
@@ -67,7 +65,7 @@ class IdaCodeGen(object):
 
         data = data[:-1] + ';'
 
-        return self.__replace_type(data)
+        return (self.__replace_type(data), None)
 
     def __generate_typedef_enum(self):
         q_types = (
@@ -144,7 +142,12 @@ class IdaCodeGen(object):
 
         query = self.session.query(models_parser.Function, models_ida.IdaRawFunctions) \
             .filter((models_parser.Function.id_ida.in_(q_sub)) &
-                    (models_ida.IdaRawFunctions.id == models_parser.Function.id_ida))
+                    (models_parser.Function.name != '') &
+                    (models_ida.IdaRawFunctions.id == models_parser.Function.id_ida) &
+                    (models_ida.IdaRawFunctions.short_name != '') &
+                    (models_ida.IdaRawFunctions.long_name != '') &
+                    (models_ida.IdaRawFunctions.short_name is not None) &
+                    (models_ida.IdaRawFunctions.long_name is not None))
 
         return query.all()
 
@@ -191,7 +194,8 @@ class IdaCodeGen(object):
             for x in self.__get_items_info(c):
                 yield x
 
-    def __trimming_name(self, name):
+    @staticmethod
+    def __trimming_name(name):
         while True:
             pairs = util_parser.get_last_pair_sym(name, '<', '>')
             if pairs is not None:
@@ -202,7 +206,8 @@ class IdaCodeGen(object):
         name = name.replace(':', '_')
         return name
 
-    def __add_padding(self, payload, level):
+    @staticmethod
+    def __add_padding(payload, level):
         padding = ''.join(['    ' for x in xrange(0, level)])
         payload = padding + payload
         payload = re.sub('\n', '\n' + padding, payload)
@@ -221,7 +226,6 @@ class IdaCodeGen(object):
 
         item_info = (item, 0, self.__get_functions(item.get_name()), list(self.__fetch_childs(1, item.get_id())))
 
-        # todo : detect crosslink
         dependencies = set()
         for val in list(self.__get_items_info(item_info)):
             (i, level, funcs, deps) = val
@@ -242,11 +246,70 @@ class IdaCodeGen(object):
                     break
 
         dependencies -= set([item])
+        dependencies = set([self.__trimming_name(dep.get_name()) for dep in dependencies])
+
+        (payload, funcs) = fn_build(_item=item, items_info=item_info, namespace=namespace)
+
+        self.__write_file(payload=payload, name=name, namespace=namespace, dependencies=dependencies, my_namespace=True)
+
+        if funcs is not None:
+            info_payload = '{info}'.format(
+                info=self.__build_detail_info(items_info=item_info))
+
+            array_info = 'hook_record {name}_functions[] = {{\n' \
+                         '{rows}\n' \
+                         '}};\n'.format(name=name, rows=self.__build_detail_array(items_info=item_info))
+
+            detail_payload = '{init_ptr}\n{wrapper}\n{array}'.format(
+                init_ptr=self.__build_detail_init_ptr(items_info=item_info),
+                wrapper=self.__build_detail_wrapper(items_info=item_info),
+                array=array_info)
+
+            namespace_info = 'info'
+            namespace_detail = 'detail'
+
+            if namespace and len(namespace):
+                namespace_info = namespace + '::info'
+                namespace_detail = namespace + '::detail'
+
+            self.__write_file(payload=info_payload,
+                              name=name + '_info',
+                              namespace=namespace_info,
+                              dependencies=set([name]),
+                              my_namespace=True)
+
+            self.__write_file(payload=detail_payload,
+                              name=name + '_detail',
+                              namespace=namespace_detail,
+                              dependencies=set([name + '_info']),
+                              my_namespace=True)
+
+            tmpl_registry = 'class {name}_registry : public ImplWrapper\n' \
+                            '{{\n' \
+                            '    public: void registry() {{\n' \
+                            '        auto& hook_core = CCoreWrapper::getInstance();\n' \
+                            '        for (auto& r : {name}_functions)\n' \
+                            '            hook_core.reg_wrapper(r.pBind, r);\n' \
+                            '    }}\n' \
+                            '}};\n'
+
+            self.__write_file(payload=tmpl_registry.format(name=name),
+                              name=name + '_registry',
+                              namespace=namespace_detail,
+                              dependencies=set([name + '_detail']),
+                              my_namespace=True)
+
+    def __write_file(self, payload, name, namespace, dependencies, my_namespace):
+        if namespace is None:
+            namespace = ''
 
         parts_namespace = list(util_parser.split_name(namespace.replace('<', '').replace('>', '')))
 
-        payload = fn_build(_item=item, items_info=item_info, namespace=namespace)
-        payload = self.__add_padding(payload=payload, level=1 + len(parts_namespace))
+        base_padding = 0
+        if my_namespace:
+            base_padding = 1
+
+        payload = self.__add_padding(payload=payload, level=base_padding + len(parts_namespace))
 
         name = self.__trimming_name(name)
         filename = self.out_gen + '/' + name + '.hpp'
@@ -257,18 +320,18 @@ class IdaCodeGen(object):
                 f_type.write('#pragma once\n\n')
                 f_type.write('#include "./common/common.h"\n')
 
-        name_deps = set([self.__trimming_name(dep.get_name()) for dep in dependencies])
-
-        sort_name_deps = list(name_deps)
+        sort_name_deps = list(dependencies)
         sort_name_deps.sort()
 
         with open(filename, 'a') as f_type:
             for dep in sort_name_deps:
                 f_type.write('#include "{dep_name}.hpp"\n'.format(dep_name=self.__trimming_name(dep)))
 
-            f_type.write('\n\nSTART_ATF_NAMESPACE\n')
+            f_type.write('\n')
+            if my_namespace:
+                f_type.write('\nSTART_ATF_NAMESPACE\n')
 
-            index_nm = 1
+            index_nm = base_padding
             for nm in parts_namespace:
                 padding = ''.join(['    ' for x in xrange(0, index_nm)])
                 f_type.write('{padding}namespace {namespace}\n{padding}{{\n'.format(namespace=nm, padding=padding))
@@ -281,10 +344,13 @@ class IdaCodeGen(object):
                 padding = ''.join(['    ' for x in xrange(0, index_nm)])
                 f_type.write('\n{padding}}}; // end namespace {namespace}'.format(namespace=nm, padding=padding))
 
-            f_type.write('\nEND_ATF_NAMESPACE\n')
+            if my_namespace:
+                f_type.write('\nEND_ATF_NAMESPACE\n')
+
             f_type.close()
 
-    def __replace_type(self, name):
+    @staticmethod
+    def __replace_type(name):
         replacing_subs = [('this', '_this'),
                           ('__cdecl ', 'WINAPIV '),
                           ('_BOOL ', 'BOOL '),
@@ -297,58 +363,41 @@ class IdaCodeGen(object):
 
         return name
 
-    def __build_function(self, info, name, dctor):
-        (func, raw_func) = info
-        tmpl = '''
-    {specifier}{return_type}{name}({args})
-    {{
-        using org_ptr = {return_type_typedef}(WINAPIV*)({args_type});
-        static org_ptr orig_method((org_ptr){org_address});
-        {org_return}orig_method({name_args});
-    }};'''
-        args_name = func.get_args_name()
-        args_type = list(
-            [serialize_to_string(arg_type, self.session).replace('{ptr}', '') for arg_type in func.get_args_type()])
-        ret_type = serialize_to_string(func.get_return_type(), self.session).replace('{ptr}', '').replace(' {name}', '')
+    def __generate_functions(self, prefix, namespace, funcs, fn_builder):
+        functions = dict()
+        for value in funcs:
+            (func, raw_func) = value
+            functions.setdefault(raw_func.get_name(), []).append(value)
 
-        org_return = 'return '
-        if ret_type == 'void' or dctor:
-            org_return = ''
+        functions = collections.OrderedDict(sorted(functions.items()))
+        indx = 0
+        for key, value in functions.iteritems():
+            funcs = value
+            for v in funcs:
+                indx += 1
+                (func, raw_func) = v
+                func_name = func.get_name()
+                if func_name.find('`') != -1:
+                    continue
 
-        ret_type += ' '
-        return_type_typedef = ret_type
-        if dctor:
-            ret_type = ''
+                if raw_func.get_size() == 5 and len(funcs) > 1:
+                    continue
 
-        specifier = ''
-        start_indx = 1
-        name_args = ', '.join([x for x in args_name])
-        if raw_func.get_long_name().find('static ') != -1:
-            start_indx = 0
-            specifier = 'static '
-            name_args = name_args.replace('this', '_this')
+                clean_owner = func.get_owner_name()
+                if clean_owner is None:
+                    clean_owner = ''
 
-        if ret_type.find('(WINAPIV') != -1:
-            specifier = 'using {name}_ret = {definition};\n    ' + specifier
-            specifier = specifier.format(name=name, definition=ret_type.strip())
-            ret_type = name + '_ret '
-            return_type_typedef = ret_type
+                if namespace and len(namespace):
+                    clean_owner = clean_owner.replace(namespace + '::', '')
 
-        diff_len = len(args_name) - len(args_type)
-        if diff_len > 0:
-            args_name += list(['arg_name_{indx}'.format(indx) for indx in range(0, diff_len)])
+                if func_name.startswith('~'):
+                    yield fn_builder(v, func_name, True, indx, prefix)
+                    func_name = 'dtor_' + func_name[1:]
+                elif clean_owner.endswith(func_name):
+                    yield fn_builder(v, func_name, True, indx, prefix)
+                    func_name = 'ctor_' + func_name
 
-        args = [args_type[indx].format(name=args_name[indx]) for indx in range(start_indx, len(args_name))]
-
-        return tmpl.format(specifier=specifier,
-                           return_type=ret_type,
-                           return_type_typedef=return_type_typedef,
-                           name=name,
-                           args=self.__replace_type(', '.join([x for x in args])),
-                           args_type=', '.join([x for x in args_type]).replace(' {name}', ''),
-                           org_address=hex(raw_func.get_start()),
-                           org_return=org_return,
-                           name_args=name_args)
+                yield fn_builder(v, func_name, False, indx, prefix)
 
     def __build_local_type(self, _item, items_info, namespace):
         (item, level, funcs, childs) = items_info
@@ -362,63 +411,43 @@ class IdaCodeGen(object):
             align_size = align.group(1).strip()
             data = re.sub('__declspec\(align\(([0-9]+)\)\) ', '', data)
 
+        second_part = ''
+        detail_include = ''
+        data_childs = ''
+        definition = ''
+        members = ''
         pair_sym = util_parser.get_last_pair_sym(data, '{', '}')
         if pair_sym:
-            data_childs = ''
-            for child in childs:
-                body = self.__build_local_type(_item, child, namespace)
-                data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
-
             definition = data[:pair_sym[0] + 1]
+            second_part = data[pair_sym[1]:]
             members = self.__replace_type(data[pair_sym[0] + 1:pair_sym[1]])
+        elif data.startswith('struct '):
+            definition = data[:-1] + '\n{\n'
+            second_part = '}\n' + data[-1:]
 
-            data_functions = ''
+        for child in childs:
+            (body, ign) = self.__build_local_type(_item, child, namespace)
+            data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
 
-            functions = dict()
-            for value in funcs:
-                (func, raw_func) = value
-                functions.setdefault(raw_func.get_name(), []).append(value)
+        name = item.get_name() + '::'
+        if len(namespace):
+            name = name.replace(namespace + '::', '')
 
-            # todo : first ctor and dtor
-            functions = collections.OrderedDict(sorted(functions.items()))
-            for key, value in functions.iteritems():
-                funcs = value
-                for v in funcs:
-                    (func, raw_func) = v
-                    func_name = func.get_name()
-                    if func_name.find('`') != -1:
-                        continue
+        data_functions = ''.join(
+            self.__generate_functions(prefix='', namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_adapter_function))
+        if len(data_functions):
+            data_functions = 'public:' + data_functions + '\n'
 
-                    if raw_func.get_size() == 5 and len(funcs) > 1:
-                        continue
+        data = '{first_part}{data_childs}{members}{functions}{second_part}'.format(
+            first_part=definition,
+            data_childs=data_childs,
+            members=members,
+            second_part=second_part,
+            functions=data_functions).replace(name, '')
 
-                    clean_owner = func.get_owner_name()
-                    if len(namespace):
-                        clean_owner = clean_owner.replace(namespace + '::', '')
-
-                    if func_name == clean_owner:
-                        data_functions += self.__build_function(v, func_name, True)
-                        func_name = 'ctor_' + func_name
-                    elif func_name == '~' + clean_owner:
-                        data_functions += self.__build_function(v, func_name, True)
-                        func_name = 'dtor_' + func_name[1:]
-
-                    data_functions += self.__build_function(v, func_name, False)
-
-            if len(data_functions):
-                data_functions = 'public:' + data_functions + '\n'
-
-            name = item.get_name() + '::'
-            if len(namespace):
-                name = name.replace(namespace + '::', '')
-
-            data = '{first_part}{data_childs}{second_part}{functions}}}\n'.format(
-                first_part=definition,
-                data_childs=data_childs,
-                second_part=members,
-                functions=data_functions).replace(name, '')
-
-        # todo : gererate detail
+        if funcs is None or len(funcs) == 0:
+            funcs = None
 
         if len(namespace):
             data = data.replace(namespace + '::', '')
@@ -430,7 +459,10 @@ class IdaCodeGen(object):
         if align_size and level == 0:
             data = '#pragma pack(push, {align})\n{data}\n#pragma pack(pop)'.format(align=align_size, data=data)
 
-        return self.__add_padding(payload=data, level=level)
+        if level == 0:
+            data += detail_include
+
+        return (self.__add_padding(payload=data, level=level), funcs)
 
     def __generate_local_types(self):
         q_types = (
@@ -456,6 +488,313 @@ class IdaCodeGen(object):
             if CONFIG['verbose']:
                 if (item_index % CONFIG['page_size'] == 0) or (count - item_index == 0):
                     print 'items({current}/{count_item})'.format(current=item_index, count_item=count)
+
+    def __build_adapter_function(self, info, name, dctor, indx, prefix):
+        (func, raw_func) = info
+        tmpl = '''
+    {specifier}{return_type}{name}({args})
+    {{
+        using org_ptr = {return_type_typedef}(WINAPIV*)({args_type});
+        {org_return}(org_ptr({org_address}))({name_args});
+    }};'''
+        args_name = func.get_args_name()
+        args_type = list(
+            [serialize_to_string(arg_type, self.session).replace('{ptr}', '') for arg_type in func.get_args_type()])
+        ret_type = serialize_to_string(func.get_return_type(), self.session).replace('{ptr}', '').replace(' {name}', '')
+
+        org_return = 'return '
+        if ret_type == 'void' or dctor:
+            org_return = ''
+
+        ret_type += ' '
+        return_type_typedef = ret_type
+        if dctor:
+            ret_type = ''
+
+        specifier = ''
+        start_indx = 1
+        name_args = ', '.join([x for x in args_name])
+        if raw_func.get_long_name().find('static ') != -1:
+            start_indx = 0
+            specifier = 'static '
+            name_args = name_args.replace('this', '_this')
+
+        if func.get_owner_name() is None:
+            start_indx = 0
+            name_args = name_args.replace('this', '_this')
+
+        if ret_type.find('(WINAPIV') != -1:
+            specifier = 'using {name}_ret = {definition};\n    ' + specifier
+            specifier = specifier.format(name=name, definition=ret_type.strip())
+            ret_type = name + '_ret '
+            return_type_typedef = ret_type
+
+        diff_len = len(args_name) - len(args_type)
+        if diff_len > 0:
+            args_name += list(['arg_name_{indx}'.format(indx) for indx in range(0, diff_len)])
+
+        args = [args_type[indx].format(name=args_name[indx]) for indx in range(start_indx, len(args_name))]
+
+        return tmpl.format(specifier=specifier,
+                           return_type=ret_type,
+                           return_type_typedef=return_type_typedef,
+                           name=name,
+                           args=self.__replace_type(', '.join([x for x in args])),
+                           args_type=', '.join([x for x in args_type]).replace(' {name}', ''),
+                           org_address=hex(raw_func.get_start()),
+                           org_return=org_return,
+                           name_args=name_args)
+
+    def __build_detail_info(self, items_info):
+        (item, level, funcs, childs) = items_info
+        data_childs = ''
+        for child in childs:
+            body = self.__build_detail_info(child)
+            if len(body):
+                data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
+
+        return ''.join(
+            self.__generate_functions(prefix=self.__trimming_name(item.get_name()),
+                                      namespace=self.__get_namespace(item.get_id()), funcs=funcs,
+                                      fn_builder=self.__build_info_detail)) + data_childs
+
+    def __build_detail_init_ptr(self, items_info):
+        (item, level, funcs, childs) = items_info
+        data_childs = ''
+        for child in childs:
+            body = self.__build_detail_init_ptr(child)
+            if len(body):
+                data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
+
+        return ''.join(
+            self.__generate_functions(prefix=self.__trimming_name(item.get_name()),
+                                      namespace=self.__get_namespace(item.get_id()), funcs=funcs,
+                                      fn_builder=self.__build_init_detail)) + data_childs
+
+    def __build_detail_wrapper(self, items_info):
+        (item, level, funcs, childs) = items_info
+        data_childs = ''
+        for child in childs:
+            body = self.__build_detail_wrapper(child)
+            if len(body):
+                data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
+
+        return ''.join(
+            self.__generate_functions(prefix=self.__trimming_name(item.get_name()),
+                                      namespace=self.__get_namespace(item.get_id()), funcs=funcs,
+                                      fn_builder=self.__build_wrapper_detail)) + data_childs
+
+    def __build_detail_array(self, items_info):
+        (item, level, funcs, childs) = items_info
+        data_childs = ''
+        for child in childs:
+            body = self.__build_detail_array(child)
+            if len(body):
+                data_childs = '{prev_data}\n{new_data}'.format(prev_data=data_childs, new_data=body)
+
+        return ''.join(
+            self.__generate_functions(prefix=self.__trimming_name(item.get_name()),
+                                      namespace=self.__get_namespace(item.get_id()), funcs=funcs,
+                                      fn_builder=self.__build_array_detail)) + data_childs
+
+    def __build_wrapper_detail(self, info, name, dctor, indx, prefix):
+        if dctor or name.find('operator') != -1:
+            return ''
+
+        (func, raw_func) = info
+        def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
+
+        tmpl = '{return_type}{def_name}_wrapper({args})\n' \
+               '{{\n' \
+               '   {org_return}{def_name}_user({name_args});\n' \
+               '}};\n'
+
+        args_name = func.get_args_name()
+        args_type = list(
+            [serialize_to_string(arg_type, self.session).replace('{ptr}', '') for arg_type in func.get_args_type()])
+        ret_type = serialize_to_string(func.get_return_type(), self.session).replace('{ptr}', '').replace(' {name}', '')
+
+        org_return = 'return '
+        if ret_type == 'void':
+            org_return = ''
+
+        name_args = ', '.join([x.replace('this', '_this') for x in args_name])
+
+        if ret_type.find('(WINAPIV') != -1:
+            ret_type = name + '_ret '
+
+        ret_type += ' '
+
+        diff_len = len(args_name) - len(args_type)
+        if diff_len > 0:
+            args_name += list(['arg_name_{indx}'.format(indx) for indx in range(0, diff_len)])
+
+        args = [args_type[indx].format(name=args_name[indx]) for indx in range(0, len(args_name))]
+
+        return tmpl.format(def_name=def_name,
+                           return_type=ret_type,
+                           args=self.__replace_type(', '.join([x for x in args])),
+                           args_type=', '.join([x for x in args_type]).replace(' {name}', ''),
+                           org_return=org_return,
+                           name_args=name_args)
+
+    def __build_info_detail(self, info, name, dctor, indx, prefix):
+        if dctor or name.find('operator') != -1:
+            return ''
+
+        def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
+        (func, raw_func) = info
+        tmpl = 'using {def_name}_ptr = {return_type}(WINAPIV*)({args_type_ptr});\n' \
+               'using {def_name}_clbk = {return_type}(WINAPIV*)({args_type_clbk});\n'
+
+        args_type = list(
+            [serialize_to_string(arg_type, self.session).replace('{ptr}', '') for arg_type in func.get_args_type()])
+        args_type.append('{def_name}_ptr'.format(def_name=def_name))
+        ret_type = serialize_to_string(func.get_return_type(), self.session).replace('{ptr}', '').replace(' {name}', '')
+
+        if ret_type.find('(WINAPIV') != -1:
+            specifier = 'using {def_name}_ret = {definition};\n'
+            specifier = specifier.format(def_name=def_name, definition=ret_type.strip())
+            tmpl = specifier + tmpl
+            ret_type = def_name + '_ret'
+
+        ret_type += ' '
+
+        return tmpl.format(return_type=ret_type,
+                           def_name=def_name,
+                           args_type_ptr=', '.join([x for x in args_type[:-1]]).replace(' {name}', ''),
+                           args_type_clbk=', '.join([x for x in args_type]).replace(' {name}', ''))
+
+    def __build_init_detail(self, info, name, dctor, indx, prefix):
+        if dctor or name.find('operator') != -1:
+            return ''
+
+        def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
+        tmpl = 'info::{def_name}_ptr {def_name}_next(nullptr);\n' \
+               'info::{def_name}_clbk {def_name}_user(nullptr);\n'
+
+        return tmpl.format(def_name=def_name)
+
+    def __build_array_detail(self, info, name, dctor, indx, prefix):
+        if dctor or name.find('operator') != -1:
+            return ''
+
+        (func, raw_func) = info
+        def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
+        tmpl = '{{   (LPVOID){org_address},\n' \
+               '    (LPVOID *)&{def_name}_user,\n' \
+               '    (LPVOID *)&{def_name}_next,\n' \
+               '    (LPVOID)cast_pointer_function({def_name}_wrapper),\n' \
+               '    (LPVOID)cast_pointer_function(({cast_type})&{fn_addr_name}) }},\n'
+
+        cast_type = '{ret}({name_owner}*)({args_type})'
+        args_type = list(
+            [serialize_to_string(arg_type, self.session).replace('{ptr}', '') for arg_type in func.get_args_type()])
+        ret_type = serialize_to_string(func.get_return_type(), self.session).replace('{ptr}', '').replace(' {name}', '')
+
+        if ret_type.find('(WINAPIV') != -1:
+            ret_type = name + str(indx) + '_ret'
+
+        start_indx = 1
+        name_owner = ''
+        if raw_func.get_long_name().find('static ') != -1:
+            start_indx = 0
+        if func.get_owner_name() is None:
+            start_indx = 0
+        else:
+            name_owner = func.get_owner_name() + '::'
+
+        fn_addr_name = name_owner + name
+
+        completed_args_type = list(
+            [args_type[indx].replace(' {name}', '') for indx in range(start_indx, len(args_type))])
+
+        completed_args_type = ', '.join(completed_args_type)
+
+        return tmpl.format(def_name=def_name,
+                           org_address=hex(raw_func.get_start()),
+                           cast_type=cast_type.format(ret=ret_type, name_owner=name_owner,
+                                                      args_type=completed_args_type),
+                           fn_addr_name=fn_addr_name)
+
+    def __generate_global_funcs(self):
+        funcs = self.__get_functions(name=None)
+
+        prefix = 'global'
+        name = 'global'
+        namespace = 'global'
+
+        adapters_functions = ''.join(
+            self.__generate_functions(prefix=prefix, namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_adapter_function))
+
+        completed_deps = set()
+        for dep in self.__get_deps_functions(funcs):
+            root_struct = self.__fetch_parent(dep)
+            completed_deps.add(root_struct)
+
+        dependencies = set([val.get_name() for val in completed_deps])
+        self.__write_file(payload=adapters_functions,
+                          name=name,
+                          namespace=namespace,
+                          dependencies=dependencies,  # todo
+                          my_namespace=True)
+
+        array_info = 'hook_record {name}_functions[] = {{\n' \
+                     '{rows}\n' \
+                     '}};\n'.format(name=prefix, rows=''.join(
+            self.__generate_functions(prefix=prefix, namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_array_detail)))
+
+        init_ptr = ''.join(
+            self.__generate_functions(prefix=prefix, namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_init_detail))
+
+        wrapper = ''.join(
+            self.__generate_functions(prefix=prefix, namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_wrapper_detail))
+
+        detail_payload = '{init_ptr}\n{wrapper}\n{array}'.format(
+            init_ptr=init_ptr,
+            wrapper=wrapper,
+            array=array_info)
+
+        info_payload = ''.join(
+            self.__generate_functions(prefix=prefix, namespace=namespace, funcs=funcs,
+                                      fn_builder=self.__build_info_detail))
+        namespace_info = 'info'
+        namespace_detail = 'detail'
+
+        if namespace and len(namespace):
+            namespace_info = namespace + '::info'
+            namespace_detail = namespace + '::detail'
+
+        self.__write_file(payload=info_payload,
+                          name=name + '_info',
+                          namespace=namespace_info,
+                          dependencies=set([name]),
+                          my_namespace=True)
+
+        self.__write_file(payload=detail_payload,
+                          name=name + '_detail',
+                          namespace=namespace_detail,
+                          dependencies=set([name + '_info']),
+                          my_namespace=True)
+
+        tmpl_registry = 'class {name}_registry : public ImplWrapper\n' \
+                        '{{\n' \
+                        '    public: void registry() {{\n' \
+                        '        auto& hook_core = CCoreWrapper::getInstance();\n' \
+                        '        for (auto& r : {name}_functions)\n' \
+                        '            hook_core.reg_wrapper(r.pBind, r);\n' \
+                        '    }}\n' \
+                        '}};\n'
+
+        self.__write_file(payload=tmpl_registry.format(name=name),
+                          name=name + '_registry',
+                          namespace=namespace_detail,
+                          dependencies=set([name + '_detail']),
+                          my_namespace=True)
 
     def __code_gen(self):
         self.__adjust_folder()
