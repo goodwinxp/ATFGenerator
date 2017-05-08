@@ -293,10 +293,10 @@ class IdaCodeGen(object):
                               dependencies=set([name + '_info']),
                               my_namespace=True)
 
-            tmpl_registry = 'class {name}_registry : public ImplWrapper\n' \
+            tmpl_registry = 'class {name}_registry : public IRegistry\n' \
                             '{{\n' \
-                            '    public: void registry() {{\n' \
-                            '        auto& hook_core = CCoreWrapper::getInstance();\n' \
+                            '    public: virtual void registry() {{\n' \
+                            '        auto& hook_core = CATFCore::get_instance();\n' \
                             '        for (auto& r : {namespace_detail}{name}_functions)\n' \
                             '            hook_core.reg_wrapper(r.pBind, r);\n' \
                             '    }}\n' \
@@ -306,7 +306,7 @@ class IdaCodeGen(object):
             self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
                               name=name + '_registry',
                               namespace='registry',
-                              dependencies=set([name + '_detail']),
+                              dependencies=set([name + '_detail', './common/ATFCore']),
                               my_namespace=True)
 
     def __write_file(self, payload, name, namespace, dependencies, my_namespace):
@@ -793,10 +793,10 @@ class IdaCodeGen(object):
                           my_namespace=True)
 
         self.reg_name.append('{name}_registry'.format(name=name))
-        tmpl_registry = 'class {name}_registry : public ImplWrapper\n' \
+        tmpl_registry = 'class {name}_registry : public IRegistry\n' \
                         '{{\n' \
-                        '    public: void registry() {{\n' \
-                        '        auto& hook_core = CCoreWrapper::getInstance();\n' \
+                        '    public: virtual void registry() {{\n' \
+                        '        auto& hook_core = CATFCore::get_instance();\n' \
                         '        for (auto& r : {namespace_detail}{name}_functions)\n' \
                         '            hook_core.reg_wrapper(r.pBind, r);\n' \
                         '    }}\n' \
@@ -805,26 +805,26 @@ class IdaCodeGen(object):
         self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
                           name=name + '_registry',
                           namespace='registry',
-                          dependencies=set([name + '_detail']),
+                          dependencies=set([name + '_detail', './common/ATFCore']),
                           my_namespace=True)
 
     def __generate_registry(self):
         tmpl_mng_wrapper = '''
-class CMngWrapper
+class CATFCoreRegistry
 {{
 public:
-    CMngWrapper() {{
+    CATFCoreRegistry() {{
 {create_obj}
     }};
 
-    CMngWrapper(const CMngWrapper&){{}};
+    CATFCoreRegistry(const CATFCoreRegistry&){{}};
 
 public:
-    ~CMngWrapper() {{
+    ~CATFCoreRegistry() {{
     }};
 
-    static CMngWrapper& get_instance() {{
-        static CMngWrapper instance;
+    static CATFCoreRegistry& get_instance() {{
+        static CATFCoreRegistry instance;
         return instance;
     }};
 

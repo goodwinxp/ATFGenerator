@@ -9,4 +9,6 @@
 START_ATF_NAMESPACE
 	const uint16_t usVersion = 0x0001;
 	const wchar_t wszVersion[] = L"0.1";
+	
+	#include "ATFRegistry.hpp"
 END_ATF_NAMESPACE
