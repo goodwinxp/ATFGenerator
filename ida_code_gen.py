@@ -19,6 +19,7 @@ class IdaCodeGen(object):
         self.db_file = db_file
         self.out_gen = out_gen
         self.Session = sessionmaker()
+        self.reg_name = []
 
     def __enter__(self):
         return self
@@ -57,6 +58,7 @@ class IdaCodeGen(object):
         self.__generate_global_funcs()
         self.__generate_local_types()
         self.__generate_typedef_enum()
+        self.__generate_registry()
 
     def __build_typedef_enum(self, _item, items_info, namespace):
         data = _item.get_type()
@@ -293,6 +295,7 @@ class IdaCodeGen(object):
                             '    }}\n' \
                             '}};\n'
 
+            self.reg_name.append('{name}_registry'.format(name=name))
             self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
                               name=name + '_registry',
                               namespace='registry',
@@ -781,6 +784,7 @@ class IdaCodeGen(object):
                           dependencies=set([name + '_info']),
                           my_namespace=True)
 
+        self.reg_name.append('{name}_registry'.format(name=name))
         tmpl_registry = 'class {name}_registry : public ImplWrapper\n' \
                         '{{\n' \
                         '    public: void registry() {{\n' \
@@ -795,6 +799,51 @@ class IdaCodeGen(object):
                           namespace='registry',
                           dependencies=set([name + '_detail']),
                           my_namespace=True)
+
+    def __generate_registry(self):
+        tmpl_mng_wrapper = '''
+class CMngWrapper
+{{
+public:
+    CMngWrapper() {{
+{create_obj}
+    }};
+
+    CMngWrapper(const CMngWrapper&){{}};
+
+public:
+    ~CMngWrapper() {{
+    }};
+
+    static CMngWrapper& get_instance() {{
+        static CMngWrapper instance;
+        return instance;
+    }};
+
+public:
+    void registry()
+    {{
+        for (auto& w : _wrappers)
+            w->registry();
+    }};
+
+private:
+    std::vector<ImplWrapper_ptr> _wrappers;
+}};'''
+
+        create_obj = '\n'.join(
+            ['_wrappers.emplace_back(std::make_shared<registry::{name}>());'.format(name=n) for n in self.reg_name])
+
+        self.__add_padding(create_obj, 2)
+        dependencies = set()
+        dependencies.update(self.reg_name)
+
+        self.__write_file(payload=tmpl_mng_wrapper.format(create_obj=self.__add_padding(create_obj, 2)),
+                          name='mng_wrapper',
+                          namespace='',
+                          dependencies=dependencies,
+                          my_namespace=True)
+        pass
 
     def __code_gen(self):
         self.__adjust_folder()
