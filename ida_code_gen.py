@@ -229,7 +229,9 @@ class IdaCodeGen(object):
             if re.search(pattern=bname, string=name) or re.search(pattern=bname, string=namespace):
                 return
 
+        is_template = False
         if name[len(namespace):].find('<') != -1:
+            is_template = True
             with open(self.out_gen + '/detect_templates.log', 'a') as f_detect:
                 f_detect.write('[WARNING] Found template type ' + repr(item) + '\n')
 
@@ -261,7 +263,7 @@ class IdaCodeGen(object):
 
         self.__write_file(payload=payload, name=name, namespace=namespace, dependencies=dependencies, my_namespace=True)
 
-        if funcs is not None:
+        if funcs is not None and is_template is False:
             info_payload = '{info}'.format(
                 info=self.__build_detail_info(items_info=item_info))
 
@@ -438,6 +440,9 @@ class IdaCodeGen(object):
         elif data.startswith('struct '):
             definition = data[:-1] + '\n{\n'
             second_part = '}\n' + data[-1:]
+
+        if definition.find('<') != -1:
+            definition = 'template<>\n' + definition
 
         for child in childs:
             (body, ign) = self.__build_local_type(_item, child, namespace)
