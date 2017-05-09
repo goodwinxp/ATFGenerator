@@ -637,8 +637,8 @@ class IdaCodeGen(object):
         if ret_type == 'void':
             org_return = ''
 
-        args_name.append('{def_name}_next'.format(def_name=def_name))
-        name_args = ', '.join([x.replace('this', '_this') for x in args_name])
+        name_args = ', '.join(
+            [x.replace('this', '_this') for x in args_name + ['{def_name}_next'.format(def_name=def_name)]])
 
         if ret_type.find('(WINAPIV') != -1:
             ret_type = name + '_ret '
@@ -647,7 +647,7 @@ class IdaCodeGen(object):
 
         diff_len = len(args_name) - len(args_type)
         if diff_len > 0:
-            args_name += list(['arg_name_{indx}'.format(indx) for indx in range(0, diff_len)])
+            args_name += list(['arg_name_{indx}'.format(indx=indx) for indx in range(0, diff_len)])
 
         args = [args_type[indx].format(name=args_name[indx]) for indx in range(0, len(args_name))]
 
