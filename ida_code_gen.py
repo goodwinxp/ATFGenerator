@@ -267,9 +267,13 @@ class IdaCodeGen(object):
             info_payload = '{info}'.format(
                 info=self.__build_detail_info(items_info=item_info))
 
+            new_name = name
+            if namespace and len(namespace):
+                new_name = new_name.replace(namespace + '::', '')
+
             array_info = 'hook_record {name}_functions[] = {{\n' \
                          '{rows}\n' \
-                         '}};\n'.format(name=name, rows=self.__build_detail_array(items_info=item_info))
+                         '}};\n'.format(name=new_name, rows=self.__build_detail_array(items_info=item_info))
 
             detail_payload = '{init_ptr}\n{wrapper}\n{array}'.format(
                 init_ptr=self.__build_detail_init_ptr(items_info=item_info),
@@ -278,10 +282,12 @@ class IdaCodeGen(object):
 
             namespace_info = 'info'
             namespace_detail = 'detail'
+            namespace_registry = 'registry'
 
             if namespace and len(namespace):
                 namespace_info = namespace + '::info'
                 namespace_detail = namespace + '::detail'
+                namespace_registry = namespace + '::registry'
 
             self.__write_file(payload=info_payload,
                               name=name + '_info',
@@ -299,15 +305,15 @@ class IdaCodeGen(object):
                             '{{\n' \
                             '    public: virtual void registry() {{\n' \
                             '        auto& hook_core = CATFCore::get_instance();\n' \
-                            '        for (auto& r : {namespace_detail}{name}_functions)\n' \
+                            '        for (auto& r : {namespace_detail}::{name}_functions)\n' \
                             '            hook_core.reg_wrapper(r.pBind, r);\n' \
                             '    }}\n' \
                             '}};\n'
 
             self.reg_name.append('{name}_registry'.format(name=name))
-            self.__write_file(payload=tmpl_registry.format(name=name, namespace_detail=namespace_detail),
+            self.__write_file(payload=tmpl_registry.format(name=new_name, namespace_detail=namespace_detail),
                               name=name + '_registry',
-                              namespace='registry',
+                              namespace=namespace_registry,
                               dependencies=set([name + '_detail', './common/ATFCore']),
                               my_namespace=True)
 

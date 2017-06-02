@@ -19,14 +19,6 @@ START_ATF_NAMESPACE
 		return rec.val1;
 	}
 
-	struct _hook_record {
-		LPVOID pTrgAppOrig;	// Адрес в целевом приложении
-		LPVOID* ppOrig;		// clbk
-		LPVOID* ppTramp;	// tramp
-		LPVOID  pWrapper;	// tramp
-		LPVOID  pBind;		// bind
-	};
-
 	class CATFCore
 	{
 	public:
