@@ -27,12 +27,14 @@ class IdaRawLocalType(Base):
     __tablename__ = 'ida_raw_local_types'
     id = Column('id', INTEGER, primary_key=True)
     id_ida = Column('id_ida', INTEGER)
+    sizeType = Column('sizeType', INTEGER)
     name = Column('name', TEXT)
     one_line = Column('one_line', TEXT)
     multi_line = Column('multi_line', TEXT)
 
-    def __init__(self, id_ida, name, one_line, multi_line):
+    def __init__(self, id_ida, sizeType, name, one_line, multi_line):
         self.id_ida = id_ida
+        self.sizeType = sizeType
         self.name = name
         self.one_line = one_line
         self.multi_line = multi_line
@@ -52,6 +54,9 @@ class IdaRawLocalType(Base):
 
     def get_name(self):
         return self.name
+        
+    def get_size(self):
+        return self.sizeType
 
 
 class IdaRawFunctions(Base):

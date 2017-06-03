@@ -52,8 +52,8 @@ class IdaCodeGen(object):
         os.makedirs(self.out_gen)
 
     def __copy_common(self):
-        common_dir = './common'
-        shutil.copytree(common_dir, self.out_gen + common_dir)
+        common_dir = os.path.dirname(os.path.abspath(__file__)) + '/common'
+        shutil.copytree(common_dir, self.out_gen + '/common')
 
     def __generate_code(self):
         self.__generate_global_funcs()
@@ -261,6 +261,9 @@ class IdaCodeGen(object):
 
         (payload, funcs) = fn_build(_item=item, items_info=item_info, namespace=namespace)
 
+        if item.get_size() != 0:
+            payload += '    \nstatic_assert(ATF::checkSize<{name}, {size}>(), "{name}");'.format(name=name, size=item.get_size())
+            
         self.__write_file(payload=payload, name=name, namespace=namespace, dependencies=dependencies, my_namespace=True)
 
         if funcs is not None and is_template is False:
@@ -869,8 +872,9 @@ private:
         pass
 
     def __read_black_list(self):
-        with open(CONFIG['black_list'], 'r') as f_list:
-            self.black_list = list([line.strip() for line in f_list])
+        if os.path.exists(CONFIG['black_list']):
+            with open(CONFIG['black_list'], 'r') as f_list:
+                self.black_list = list([line.strip() for line in f_list])
 
     def __code_gen(self):
         self.__read_black_list()

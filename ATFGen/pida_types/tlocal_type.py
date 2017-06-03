@@ -1,4 +1,4 @@
-import models_ida
+from ..models_ida import IdaRawLocalType
 from abc_type import IdaTypes
 from types import IDA_TYPES
 
@@ -9,9 +9,9 @@ class IdaTLocalType(IdaTypes):
         self.ida_type = {'idt': ida_type, 'value': self.normal_id}
 
     def decode(self, data, ext=False):
-        from ida_decoder import decode_id
+        import ida_decoder
 
-        self.__set_normal_id(decode_id(data[:2]))
+        self.__set_normal_id(ida_decoder.decode_id(data[:2]))
         if ext:
             self.__extension_id()
 
@@ -22,8 +22,8 @@ class IdaTLocalType(IdaTypes):
         return self.ida_type
 
     def to_string(self, session):
-        query = session.query(models_ida.IdaRawLocalType.name) \
-            .filter(models_ida.IdaRawLocalType.id_ida == self.ida_type['value'])
+        query = session.query(IdaRawLocalType.name) \
+            .filter(IdaRawLocalType.id_ida == self.ida_type['value'])
         return 'struct ' + query.one()[0] + '{ptr} {name}'
 
     def from_dict(self, data):

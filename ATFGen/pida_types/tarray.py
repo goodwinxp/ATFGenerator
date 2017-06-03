@@ -1,5 +1,5 @@
 from abc_type import IdaTypes
-from pida_types.serializer_ida_type import serialize_to_string
+from serializer_ida_type import serialize_to_string
 from types import IDA_TYPES
 
 
@@ -8,7 +8,7 @@ class IdaTArray(IdaTypes):
         self.ida_type = {'idt': ida_type, 'value': {'count': 0, 'type': None}}
 
     def decode(self, data):
-        from ida_decoder import decode_step
+        import ida_decoder
 
         count = ord(data[0])
         offset = 1
@@ -17,7 +17,7 @@ class IdaTArray(IdaTypes):
             count |= ~(0x80 - ord(data[0]))
             offset = 2
 
-        rbyte, value = decode_step(ida_type=data[offset:])
+        rbyte, value = ida_decoder.decode_step(ida_type=data[offset:])
         offset += rbyte
         self.ida_type['value']['count'] = count
         self.ida_type['value']['type'] = value

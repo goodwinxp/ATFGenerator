@@ -1,6 +1,6 @@
 from abc_type import IdaTypes
 from types import IDA_TYPES
-from pida_types.serializer_ida_type import serialize_to_string
+from serializer_ida_type import serialize_to_string
 
 
 class IdaTFunctions(IdaTypes):
@@ -16,7 +16,7 @@ class IdaTFunctions(IdaTypes):
         }
 
     def decode(self, ida_type):
-        from ida_decoder import decode_step
+        import ida_decoder
 
         raw_conv_type = ord(ida_type[0])
         convention = get_convention_by_code(raw_conv_type)
@@ -28,7 +28,7 @@ class IdaTFunctions(IdaTypes):
             offset += 2
 
         if not raw_conv_type == 0x21:
-            rbyte, ret_type = decode_step(ida_type[offset:])
+            rbyte, ret_type = ida_decoder.decode_step(ida_type[offset:])
             offset += rbyte
             self.ida_type['value']['ret_type'] = ret_type
 
@@ -39,7 +39,7 @@ class IdaTFunctions(IdaTypes):
         count_args = ord(ida_type[offset])
         offset += 1
         for i in range(1, count_args):
-            rbyte, value = decode_step(ida_type[offset:])
+            rbyte, value = ida_decoder.decode_step(ida_type[offset:])
             offset += rbyte
             self.ida_type['value']['args_type'].append(value)
 

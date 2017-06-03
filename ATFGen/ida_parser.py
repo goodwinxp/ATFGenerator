@@ -86,8 +86,8 @@ class IdaInfoParser(object):
             try:
                 function.parsing()
                 functions.append(function)
-            except:
-                print '[Error] function with id = {id}. catch exception'.format(id=item.get_id())
+            except Exception as e:
+                print '[Error] function with id = {id}. catch exception = {excpt}'.format(id=item.get_id(), excpt=e)
 
             if CONFIG['verbose']:
                 if (index_item % CONFIG['page_size'] == 0) or (count - index_item == 0):

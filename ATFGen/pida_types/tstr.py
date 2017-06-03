@@ -10,9 +10,9 @@ class IdaTStr(IdaTypes):
         count = ord(data[0])
         offset = 1
         for i in range(0, count):
-            from ida_decoder import decode_hybrid_type
+            import ida_decoder
 
-            rbyte, value = decode_hybrid_type(ida_type=data[offset:])
+            rbyte, value = ida_decoder.decode_hybrid_type(ida_type=data[offset:])
             offset += rbyte
             self.ida_type['value'].append(value)
 
