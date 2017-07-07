@@ -23,4 +23,11 @@ START_ATF_NAMESPACE
 		LPVOID  pWrapper;	// tramp
 		LPVOID  pBind;		// bind
 	} hook_record;
+	
+	template<typename _Ty, size_t _Need, size_t _Have = sizeof(_Ty)>
+	constexpr bool checkSize()
+	{
+		static_assert(_Have == _Need, "Invalid size");
+		return true;
+	}
 END_ATF_NAMESPACE
