@@ -144,7 +144,7 @@ class IdaCodeGen(object):
         )
 
         query = self.session.query(models_parser.Function, models_ida.IdaRawFunctions) \
-            .filter((models_parser.Function.id_ida.in_(q_sub)) &
+            .filter((models_parser.Function.id.in_(q_sub)) &
                     (models_parser.Function.name != '') &
                     (models_ida.IdaRawFunctions.id == models_parser.Function.id_ida) &
                     (models_ida.IdaRawFunctions.short_name != '') &
@@ -559,9 +559,9 @@ class IdaCodeGen(object):
 
         diff_len = len(args_name) - len(args_type)
         if diff_len > 0:
-            args_name += list(['arg_name_{indx}'.format(indx) for indx in range(0, diff_len)])
+            args_name += list(['arg_name_{indx}'.format(indx=indx) for indx in range(0, diff_len)])
 
-        args = [args_type[indx].format(name=args_name[indx]) for indx in range(start_indx, len(args_name))]
+        args = [args_type[indx].format(name=args_name[indx]) for indx in range(start_indx, len(args_type))]
 
         return tmpl.format(specifier=specifier,
                            return_type=ret_type,
@@ -656,9 +656,9 @@ class IdaCodeGen(object):
 
         diff_len = len(args_name) - len(args_type)
         if diff_len > 0:
-            args_name += list(['arg_name_{indx}'.format(indx=indx) for indx in range(0, diff_len)])
+            args_name += list(['arg_name_{indx}'.format(indx=i) for i in range(0, diff_len)])
 
-        args = [args_type[indx].format(name=args_name[indx]) for indx in range(0, len(args_name))]
+        args = [args_type[i].format(name=args_name[i]) for i in range(0, len(args_type))]
 
         return tmpl.format(def_name=def_name,
                            return_type=ret_type,
