@@ -854,11 +854,11 @@ public:
     }};
 
 private:
-    std::vector<ImplWrapper_ptr> _wrappers;
+    ::std::vector<ImplWrapper_ptr> _wrappers;
 }};'''
 
         create_obj = '\n'.join(
-            ['_wrappers.emplace_back(std::make_shared<registry::{name}>());'.format(name=n) for n in self.reg_name])
+            ['_wrappers.emplace_back(::std::make_shared<registry::{name}>());'.format(name=n) for n in self.reg_name])
 
         self.__add_padding(create_obj, 2)
         dependencies = set()
