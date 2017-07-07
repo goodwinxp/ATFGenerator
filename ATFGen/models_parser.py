@@ -35,7 +35,7 @@ class LocalType(Base):
             offset = len(u'const ')
 
         for t in types:
-            if self.raw_multi.startswith(t, offset):
+            if self.raw_multi.find(t, offset) != -1:
                 value = t
                 break
 
