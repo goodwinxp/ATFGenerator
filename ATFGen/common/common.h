@@ -11,8 +11,8 @@
 #define END_ATF_NAMESPACE };
 
 START_ATF_NAMESPACE
-	const uint16_t usVersion = 0x0002;
-	const wchar_t wszVersion[] = L"0.2";
+	const uint16_t usVersion = 0x0003;
+	const wchar_t wszVersion[] = L"0.3";
 	
 	#include "ATFRegistry.hpp"
 	
