@@ -1,5 +1,5 @@
 from abc_type import IdaTypes
-from types import get_base_name
+from ida_types import get_base_name
 
 
 class IdaTBase(IdaTypes):

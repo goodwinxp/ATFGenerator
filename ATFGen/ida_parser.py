@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import func
-from pida_types.types import IDA_TYPES
+from pida_types.ida_types import IDA_TYPES
 
 
 class IdaInfoParser(object):

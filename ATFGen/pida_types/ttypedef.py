@@ -1,5 +1,5 @@
 from abc_type import IdaTypes
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 from serializer_ida_type import serialize_to_string
 
 

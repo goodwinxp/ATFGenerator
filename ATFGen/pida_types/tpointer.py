@@ -1,6 +1,6 @@
 from abc_type import IdaTypes
 from serializer_ida_type import serialize_to_string
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 
 
 class IdaTPointer(IdaTypes):

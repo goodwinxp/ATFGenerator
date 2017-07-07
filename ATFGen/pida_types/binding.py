@@ -7,7 +7,7 @@ from tarray import IdaTArray
 from tenum import IdaTEnum
 from tbase import IdaTBase
 from tstr import IdaTStr
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 
 PIDA_TYPES = {
     IDA_TYPES['void']: IdaTBase,

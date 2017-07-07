@@ -1,5 +1,5 @@
 from abc_type import IdaTypes
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 from serializer_ida_type import serialize_to_string
 
 
@@ -17,7 +17,6 @@ class IdaTFunctions(IdaTypes):
 
     def decode(self, ida_type):
         import ida_decoder
-
         raw_conv_type = ord(ida_type[0])
         convention = get_convention_by_code(raw_conv_type)
         self.ida_type['value']['conv_call'] = convention

@@ -1,6 +1,8 @@
-from ..models_ida import IdaRawLocalType
+import sys
+sys.path.append("..")
+from models_ida import IdaRawLocalType
 from abc_type import IdaTypes
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 
 
 class IdaTLocalType(IdaTypes):

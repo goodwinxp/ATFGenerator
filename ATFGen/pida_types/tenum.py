@@ -1,4 +1,4 @@
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 from tstruct import IdaTStruct
 
 

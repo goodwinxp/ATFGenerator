@@ -1,4 +1,4 @@
-from types import IDA_TYPES
+from ida_types import IDA_TYPES
 from binding import PIDA_TYPES
 from tlocal_type import IdaTLocalType, is_local_type
 
