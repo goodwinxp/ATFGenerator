@@ -57,6 +57,9 @@ class IdaCodeGen(object):
         common_dir = os.path.dirname(os.path.abspath(__file__)) + '/common'
         shutil.copytree(common_dir, self.out_gen + '/include/common')
 
+        lib_dir = os.path.dirname(os.path.abspath(__file__)) + '/library'
+        shutil.copytree(lib_dir, self.out_gen + '/library')
+
     def __generate_code(self):
         self.__generate_global_funcs()
         self.__generate_local_types()
@@ -696,8 +699,8 @@ class IdaCodeGen(object):
             return ''
 
         def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
-        tmpl = 'info::{def_name}_ptr {def_name}_next(nullptr);\n' \
-               'info::{def_name}_clbk {def_name}_user(nullptr);\n'
+        tmpl = 'Info::{def_name}_ptr {def_name}_next(nullptr);\n' \
+               'Info::{def_name}_clbk {def_name}_user(nullptr);\n'
 
         return tmpl.format(def_name=def_name)
 
@@ -707,13 +710,13 @@ class IdaCodeGen(object):
 
         (func, raw_func) = info
         def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
-        tmpl = '{{\n' \
+        tmpl = '(\n' \
                '    (LPVOID){org_address},\n' \
                '    (LPVOID *)&{def_name}_user,\n' \
                '    (LPVOID *)&{def_name}_next,\n' \
                '    (LPVOID)cast_pointer_function({def_name}_wrapper),\n' \
                '    (LPVOID)cast_pointer_function(({cast_type})&{fn_addr_name})\n' \
-               '}},'
+               '),'
 
         cast_type = '{ret}({name_owner}*)({args_type})'
         args_type = list(
@@ -790,10 +793,10 @@ class IdaCodeGen(object):
         self.__write_file(payload=detail_header,
                           name=name + 'Detail',
                           namespace=namespace_detail,
-                          dependencies=set([name + 'Info']),
+                          dependencies=set([name + 'Info', "common/ATFCore"]),
                           my_namespace=True,
                           extention_file='.hpp',
-                          shared=False)
+                          shared=True)
 
         definition_array = '{declaration_array} = \n' \
                            '{{\n' \
@@ -954,11 +957,13 @@ private:
         with open(filename, 'w') as f_type:
             f_type.write('cmake_minimum_required(VERSION 2.8)\n'
                          'project (ATFLib)\n'
+                         'set(CMAKE_CXX_FLAGS "/MP")\n'
                          'set(CMAKE_CXX_FLAGS_RELEASE "/MT")\n'
                          'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT")\n'
                          'set(CMAKE_CXX_FLAGS_MINSIZEREL "/MT")\n'
                          'file(GLOB SOURCES source/*.cpp)\n'
                          'include_directories(include)\n'
+                         'include_directories(library/minhook/include)\n'
                          'add_library(${PROJECT_NAME} STATIC ${SOURCES})')
             f_type.close()
 
