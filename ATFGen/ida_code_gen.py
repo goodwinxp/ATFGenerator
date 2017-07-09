@@ -793,7 +793,7 @@ class IdaCodeGen(object):
         self.__write_file(payload=detail_header,
                           name=name + 'Detail',
                           namespace=namespace_detail,
-                          dependencies=set([name + 'Info', "common/ATFCore"]),
+                          dependencies=set([name + 'Info']),
                           my_namespace=True,
                           extention_file='.hpp',
                           shared=True)
@@ -824,7 +824,7 @@ class IdaCodeGen(object):
         self.__write_file(payload=detail_payload,
                           name=name + 'Detail',
                           namespace=namespace_detail,
-                          dependencies=set([name + 'Detail']),
+                          dependencies=set([name + 'Detail', 'common/ATFCore']),
                           my_namespace=True,
                           extention_file='.cpp',
                           shared=False)
