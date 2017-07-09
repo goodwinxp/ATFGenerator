@@ -11,10 +11,10 @@
 #define END_ATF_NAMESPACE };
 
 START_ATF_NAMESPACE
-	const uint16_t usVersion = 0x0003;
-	const wchar_t wszVersion[] = L"0.3";
+	#include "ATFRegister.hpp"
 	
-	#include "ATFRegistry.hpp"
+	const uint16_t usVersion = 0x0100;
+	const wchar_t wszVersion[] = L"1.0";
 	
 	typedef struct _hook_record {
 		LPVOID pTrgAppOrig;	// Адрес в целевом приложении
