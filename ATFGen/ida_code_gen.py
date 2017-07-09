@@ -787,7 +787,7 @@ class IdaCodeGen(object):
 
         array_records = filter(lambda x: len(x) > 0, array_records)
 
-        declaration_array = '::std::array<hook_record, {N}> {name}_functions'.format(N=len(array_records) + 1,
+        declaration_array = '::std::array<hook_record, {N}> {name}_functions'.format(N=len(array_records),
                                                                                      name=prefix)
         detail_header = 'extern {declaration_array};'.format(declaration_array=declaration_array)
         self.__write_file(payload=detail_header,
