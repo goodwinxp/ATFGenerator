@@ -420,7 +420,8 @@ class IdaCodeGen(object):
         align = re.search('struct .*__declspec\(align\(([0-9]+)', data)
         if align is not None:
             align_size = align.group(1).strip()
-            data = re.sub('__declspec\(align\(([0-9]+)\)\) ', '', data)
+            
+        data = re.sub('__declspec\(align\(([0-9]+)\)\) ', '', data)
 
         second_part = ''
         detail_include = ''
