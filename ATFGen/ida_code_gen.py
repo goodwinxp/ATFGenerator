@@ -435,6 +435,8 @@ class IdaCodeGen(object):
         elif data.startswith('struct '):
             definition = data[:-1] + '\n{\n'
             second_part = '}\n' + data[-1:]
+        elif data.startswith('typedef '):
+            definition = data
 
         data_functions = ''
         if definition.find('<') != -1:
