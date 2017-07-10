@@ -710,13 +710,13 @@ class IdaCodeGen(object):
 
         (func, raw_func) = info
         def_name = '{prefix}{name}{indx}'.format(prefix=self.__trimming_name(prefix), name=name, indx=indx)
-        tmpl = '(\n' \
+        tmpl = '_hook_record {{\n' \
                '    (LPVOID){org_address},\n' \
                '    (LPVOID *)&{def_name}_user,\n' \
                '    (LPVOID *)&{def_name}_next,\n' \
                '    (LPVOID)cast_pointer_function({def_name}_wrapper),\n' \
                '    (LPVOID)cast_pointer_function(({cast_type})&{fn_addr_name})\n' \
-               '),'
+               '}},'
 
         cast_type = '{ret}({name_owner}*)({args_type})'
         args_type = list(
