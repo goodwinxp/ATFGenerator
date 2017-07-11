@@ -243,17 +243,20 @@ class IdaCodeGen(object):
         item_info = (item, 0, self.__get_functions(item.get_name()), list(self.__fetch_childs(1, item.get_id())))
 
         dependencies = set()
-        for val in list(self.__get_items_info(item_info)):
+        all_dep = list(self.__get_items_info(item_info))
+        for val in all_dep:
             (i, level, funcs, deps) = val
 
-            if level == 1:
+            dependencies.update(deps)
+            dependencies -= set([i])
+            '''if level == 1:
                 dependencies -= deps
                 dependencies -= set([i])
             elif level == 0:
                 dependencies = deps
                 continue
             elif level > 1:
-                dependencies -= deps
+                dependencies -= deps'''
 
             for prefix in ['std::', 'stdext::']:
                 if i.get_name().startswith(prefix):
@@ -420,7 +423,7 @@ class IdaCodeGen(object):
         align = re.search('struct .*__declspec\(align\(([0-9]+)', data)
         if align is not None:
             align_size = align.group(1).strip()
-            
+
         data = re.sub('__declspec\(align\(([0-9]+)\)\) ', '', data)
 
         second_part = ''
