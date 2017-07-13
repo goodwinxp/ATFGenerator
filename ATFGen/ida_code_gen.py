@@ -730,15 +730,18 @@ class IdaCodeGen(object):
             ret_type = name + str(indx) + '_ret'
 
         start_indx = 1
-        name_owner = ''
 
-        if func.get_owner_name() is None or raw_func.get_long_name().find('static ') != -1:
+        name_owner = ''
+        if func.get_owner_name() is None:
             start_indx = 0
-            name_owner = ''
         else:
             name_owner = func.get_owner_name() + '::'
 
         fn_addr_name = name_owner + name
+
+        if raw_func.get_long_name().find('static ') != -1:
+            start_indx = 0
+            name_owner = ''
 
         completed_args_type = list(
             [args_type[indx].replace(' {name}', '') for indx in range(start_indx, len(args_type))])
