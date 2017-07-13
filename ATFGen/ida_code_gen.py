@@ -223,7 +223,6 @@ class IdaCodeGen(object):
         return payload
 
     def __generate_type(self, item, fnBuildDeclaration, fnBuildDefinition):
-
         name = item.get_name()
 
         namespace = self.__get_namespace(item.get_id())
@@ -247,16 +246,14 @@ class IdaCodeGen(object):
         for val in all_dep:
             (i, level, funcs, deps) = val
 
-            dependencies.update(deps)
-            dependencies -= set([i])
-            '''if level == 1:
+            if level == 1:
                 dependencies -= deps
                 dependencies -= set([i])
             elif level == 0:
                 dependencies = deps
                 continue
             elif level > 1:
-                dependencies -= deps'''
+                dependencies -= deps
 
             for prefix in ['std::', 'stdext::']:
                 if i.get_name().startswith(prefix):
@@ -734,10 +731,10 @@ class IdaCodeGen(object):
 
         start_indx = 1
         name_owner = ''
-        if raw_func.get_long_name().find('static ') != -1:
+
+        if func.get_owner_name() is None or raw_func.get_long_name().find('static ') != -1:
             start_indx = 0
-        if func.get_owner_name() is None:
-            start_indx = 0
+            name_owner = ''
         else:
             name_owner = func.get_owner_name() + '::'
 
@@ -758,11 +755,13 @@ class IdaCodeGen(object):
         if len(funcs) == 0:
             return
 
+        name_with_namespace = name
         namespace_info = 'Info'
         namespace_detail = 'Detail'
         namespace_register = 'Register'
 
         if namespace and len(namespace):
+            name_with_namespace = namespace + '::' + name
             namespace_info = namespace + '::Info'
             namespace_detail = namespace + '::Detail'
             namespace_register = namespace + '::Register'
@@ -775,9 +774,9 @@ class IdaCodeGen(object):
                 funcs=funcs,
                 fn_builder=self.__build_info_detail))
         self.__write_file(payload=definition_info,
-                          name=name + 'Info',
+                          name=name_with_namespace + 'Info',
                           namespace=namespace_info,
-                          dependencies=set([name]),
+                          dependencies=set([name_with_namespace]),
                           my_namespace=True,
                           extention_file='.hpp',
                           shared=True)
@@ -797,9 +796,9 @@ class IdaCodeGen(object):
                                                                                      name=prefix)
         detail_header = 'extern {declaration_array};'.format(declaration_array=declaration_array)
         self.__write_file(payload=detail_header,
-                          name=name + 'Detail',
+                          name=name_with_namespace + 'Detail',
                           namespace=namespace_detail,
-                          dependencies=set([name + 'Info']),
+                          dependencies=set([name_with_namespace + 'Info']),
                           my_namespace=True,
                           extention_file='.hpp',
                           shared=True)
@@ -828,9 +827,9 @@ class IdaCodeGen(object):
                                                      definition_wrappers=definition_wrappers,
                                                      definition_array=definition_array)
         self.__write_file(payload=detail_payload,
-                          name=name + 'Detail',
+                          name=name_with_namespace + 'Detail',
                           namespace=namespace_detail,
-                          dependencies=set([name + 'Detail', 'common/ATFCore']),
+                          dependencies=set([name_with_namespace + 'Detail', 'common/ATFCore']),
                           my_namespace=True,
                           extention_file='.cpp',
                           shared=False)
@@ -850,9 +849,9 @@ class IdaCodeGen(object):
                            '        }}\n' \
                            '}};'.format(name_register=name_register, name=name, namespace_detail=namespace_detail)
         self.__write_file(payload=register_payload,
-                          name=name + 'Register',
+                          name=name_with_namespace + 'Register',
                           namespace=namespace_register,
-                          dependencies=set([name + 'Detail', 'common/ATFCore']),
+                          dependencies=set([name_with_namespace + 'Detail', 'common/ATFCore']),
                           my_namespace=True,
                           extention_file='.hpp',
                           shared=True)
