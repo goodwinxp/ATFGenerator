@@ -796,7 +796,7 @@ class IdaCodeGen(object):
         array_records = filter(lambda x: len(x) > 0, array_records)
 
         declaration_array = '::std::array<hook_record, {N}> {name}_functions'.format(N=len(array_records),
-                                                                                     name=prefix)
+                                                                                     name=name)
         detail_header = 'extern {declaration_array};'.format(declaration_array=declaration_array)
         self.__write_file(payload=detail_header,
                           name=name_with_namespace + 'Detail',
@@ -840,7 +840,7 @@ class IdaCodeGen(object):
 
         # Start generate register file
         name_register = '{name}Register'.format(name=name)
-        self.reg_name.append(name_register)
+        self.reg_name.append((namespace, name_register))
         register_payload = 'class {name_register} : public IRegister\n' \
                            '{{\n' \
                            '    public: \n' \
@@ -939,12 +939,21 @@ private:
     ::std::vector<Register_ptr> _registry;
 }};'''
 
-        create_obj = '\n'.join(
-            ['_registry.emplace_back(::std::make_shared<Register::{name}>());'.format(name=n) for n in self.reg_name])
+        obj_tmpl = '_registry.emplace_back(::std::make_shared<{namespace}Register::{name}>());'
+        obj_rec = []
+
+        dependencies = set()
+        for (namespace, name) in self.reg_name:
+            print_namespace = namespace
+            if namespace and len(namespace):
+                print_namespace = namespace + '::'
+
+            obj_rec.append(obj_tmpl.format(namespace=print_namespace, name=name))
+            dependencies.add(self.__trimming_name(print_namespace + name))
+
+        create_obj = '\n'.join(obj_rec)
 
         self.__add_padding(create_obj, 2)
-        dependencies = set()
-        dependencies.update(self.reg_name)
 
         self.__write_file(payload=template_core_registry.format(create_obj=self.__add_padding(create_obj, 2)),
                           name='ATFRegistry',
