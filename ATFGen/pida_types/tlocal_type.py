@@ -1,6 +1,4 @@
-import sys
-sys.path.append("..")
-from models_ida import IdaRawLocalType
+from ..models_ida import IdaRawLocalType
 from abc_type import IdaTypes
 from ida_types import IDA_TYPES
 
