@@ -17,6 +17,7 @@ To generate a C++11 framework for create DLL with local types from IDAPro<br>
 > ida python api<br>
 > sqlalchemy >= 1.1.4<br>
 > python = 2.7.x
+> IDAPro 6.8
 
 # Acknowledgments
  - anntakefour - for the inspiration
